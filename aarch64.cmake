@@ -11,3 +11,5 @@ set(CMAKE_C_COMPILER_TARGET aarch64-none-elf)
 set(CMAKE_CXX_COMPILER_TARGET aarch64-none-elf)
 add_compile_options(-target ${CMAKE_C_COMPILER_TARGET})
 add_link_options(-target ${CMAKE_C_COMPILER_TARGET})
+
+option(AARCH64_QEMU_UART "Support for QEMU UART on Aarch64" CACHE)

@@ -26,7 +26,13 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${CMAKE_SOURCE_DIR}/src
 
 add_executable(KERNEL.ERIK
     src/main.c
+    src/serial.c
 )
+
+if(AARCH64_QEMU_UART)
+    target_sources(KERNEL.ERIK PRIVATE src/arch/aarch64/pl011.c)
+    target_compile_definitions(KERNEL.ERIK PRIVATE AARCH64_QEMU_UART)
+endif()
 
 target_include_directories(KERNEL.ERIK PUBLIC 
     include)
