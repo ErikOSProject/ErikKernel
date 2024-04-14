@@ -6,6 +6,8 @@ message(FATAL_ERROR "Please specify a compatible toolchain file.
 For example: \"cmake -DCMAKE_TOOLCHAIN_FILE=../x64.cmake ..\"")
 endif()
 
+option(DEBUG_PRINTK "Print additional debug output" CACHE)
+
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 
@@ -28,6 +30,11 @@ add_executable(KERNEL.ERIK
     src/main.c
     src/serial.c
 )
+
+if(DEBUG_PRINTK)
+    target_sources(KERNEL.ERIK PRIVATE src/debug.c)
+    target_compile_definitions(KERNEL.ERIK PRIVATE DEBUG_PRINTK)
+endif()
 
 if(AARCH64_QEMU_UART)
     target_sources(KERNEL.ERIK PRIVATE src/arch/aarch64/pl011.c)
