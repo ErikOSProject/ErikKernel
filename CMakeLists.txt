@@ -34,5 +34,10 @@ if(AARCH64_QEMU_UART)
     target_compile_definitions(KERNEL.ERIK PRIVATE AARCH64_QEMU_UART)
 endif()
 
+if(X64_UART)
+    target_sources(KERNEL.ERIK PRIVATE src/arch/x86_64/serial.c)
+    target_compile_definitions(KERNEL.ERIK PRIVATE X64_UART)
+endif()
+
 target_include_directories(KERNEL.ERIK PUBLIC 
     include)
