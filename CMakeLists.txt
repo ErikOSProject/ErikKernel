@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(ErikKernel VERSION 0.1)
+enable_language(C ASM)
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Generic")
 message(FATAL_ERROR "Please specify a compatible toolchain file. 
@@ -29,6 +30,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${CMAKE_SOURCE_DIR}/src
 add_executable(KERNEL.ERIK
     src/main.c
     src/serial.c
+    ${ARCH_SOURCES}
 )
 
 if(DEBUG_PRINTK)

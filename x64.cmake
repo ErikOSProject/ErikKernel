@@ -12,4 +12,10 @@ set(CMAKE_CXX_COMPILER_TARGET x86_64-none-elf)
 add_compile_options(-target ${CMAKE_C_COMPILER_TARGET})
 add_link_options(-target ${CMAKE_C_COMPILER_TARGET})
 
+set(ARCH_SOURCES
+    src/arch/x86_64/arch.c
+    src/arch/x86_64/gdt.c
+    src/arch/x86_64/idt.c
+    src/arch/x86_64/isrs.S)
+
 option(X64_UART "Support for UART on x86_64" CACHE)
