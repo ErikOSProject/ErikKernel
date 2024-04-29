@@ -1,13 +1,14 @@
 #ifndef _ERIKBOOT_H
 #define _ERIKBOOT_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
 typedef struct {
 	uint32_t Type;
-	void *PhysicalStart;
-	void *VirtualStart;
+	uintptr_t PhysicalStart;
+	uintptr_t VirtualStart;
 	uint64_t NumberOfPages;
 	uint64_t Attribute;
 } MMapEntry;
