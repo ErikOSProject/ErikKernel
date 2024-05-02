@@ -1,7 +1,9 @@
 #include <arch.h>
 #include <debug.h>
 #include <erikboot.h>
+#include <heap.h>
 #include <memory.h>
+#include <paging.h>
 
 [[noreturn]] void kernel_main(BootInfo boot_info)
 {
@@ -10,6 +12,7 @@
 
 	arch_init();
 	page_frame_allocator_init(&boot_info);
+	heap_init(&boot_info);
 	DEBUG_PRINTF("OK!\n");
 
 	for (;;)

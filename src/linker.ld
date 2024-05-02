@@ -3,7 +3,7 @@ ENTRY(kernel_main)
 SECTIONS
 {
 	. = 0xfffffffff8000000;
-
+	_kernel_start = .;
 	.text : {
 		*(.text)
 	}
@@ -16,4 +16,5 @@ SECTIONS
 	.bss ALIGN(4096) : {
 		*(.bss)
 	}
+	_kernel_end = .;
 }
