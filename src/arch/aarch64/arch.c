@@ -2,6 +2,8 @@
 #include <debug.h>
 
 extern char vector_table_el1;
+void get_ttbr0(void);
+void get_ttbr1(void);
 
 char *exception_names[] = { "unknown",
 			    0,
@@ -72,10 +74,14 @@ void arch_init(void)
 {
 	asm volatile("msr vbar_el1, %0;"
 		     "isb;" ::"r"(&vector_table_el1));
+
+	get_ttbr0();
+	get_ttbr1();
 }
 
 void handle_synchronous_exception(uint64_t *frame)
 {
+	(void)frame;
 	uint64_t esr, elr, far;
 	asm volatile("mrs %0, esr_el1;" : "=r"(esr));
 	asm volatile("mrs %0, elr_el1;" : "=r"(elr));

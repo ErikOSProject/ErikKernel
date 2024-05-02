@@ -1,7 +1,7 @@
 #ifndef _MEMORY_H
 #define _MEMORY_H
 
-#define EFI_CONVENTIONAL_MEMORY 7
+#define PAGE_SIZE 4096
 
 typedef struct {
 	uintptr_t base;

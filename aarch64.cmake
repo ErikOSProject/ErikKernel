@@ -14,6 +14,7 @@ add_link_options(-target ${CMAKE_C_COMPILER_TARGET})
 
 set(ARCH_SOURCES
     src/arch/aarch64/arch.c
-    src/arch/aarch64/evt.S)
+    src/arch/aarch64/evt.S
+    src/arch/aarch64/paging.c)
 
 option(AARCH64_QEMU_UART "Support for QEMU UART on Aarch64" CACHE)
