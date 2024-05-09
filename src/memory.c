@@ -13,6 +13,82 @@ void *memset(void *destination, int c, size_t num)
 	return destination;
 }
 
+size_t strlen(const char *str)
+{
+	size_t len = 0;
+	for (; *str; ++str)
+		len++;
+	return len;
+}
+
+char *memcpy(char *destination, const char *source, size_t n)
+{
+	for (size_t i = 0; i < n; i++)
+		destination[i] = source[i];
+	return destination;
+}
+
+char *strcpy(char *destination, const char *source)
+{
+	size_t i = 0;
+	for (; source[i]; i++)
+		destination[i] = source[i];
+	destination[i] = 0;
+	return destination;
+}
+
+char *strcat(char *destination, const char *source)
+{
+	char *new_dest = destination + strlen(destination);
+	strcpy(new_dest, source);
+	return destination;
+}
+
+int memcmp(const char *str1, const char *str2, size_t n)
+{
+	size_t i = 0;
+	while (str1[i] == str2[i] && i < n)
+		i++;
+	return str1[i] - str2[i];
+}
+
+int strcmp(const char *str1, const char *str2)
+{
+	size_t i = 0;
+	while (str1[i] == str2[i] && str1[i] != 0)
+		i++;
+	return str1[i] - str2[i];
+}
+
+char *strtok(char *str, const char *delimiters)
+{
+	static char *s;
+	char *begin = NULL;
+	if (str)
+		s = str;
+
+	while (*s) {
+		bool d_found = false;
+		for (const char *d = delimiters; *d; ++d)
+			if (*s == *d) {
+				d_found = true;
+				break;
+			}
+
+		if (!begin && !d_found)
+			begin = s;
+
+		if (begin && d_found) {
+			*(s++) = 0;
+			break;
+		}
+
+		s++;
+	}
+
+	return begin;
+}
+
 void fill_bitmap_region(uint8_t *bitmap, unsigned int start_bit,
 			size_t num_bits, bool value)
 {

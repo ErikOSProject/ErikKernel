@@ -22,7 +22,7 @@ typedef struct {
 	MMapEntry *MMapBase;
 	size_t MMapEntryCount;
 	size_t MMapEntrySize;
-	void *InitrdBase;
+	char *InitrdBase;
 	size_t InitrdSize;
 } BootInfo;
 

@@ -1,14 +1,7 @@
 #include <debug.h>
-
+#include <erikboot.h>
+#include <memory.h>
 #include <stdarg.h>
-
-size_t strlen(const char *str)
-{
-	size_t s = 0;
-	for (; *str; str++)
-		s++;
-	return s;
-}
 
 void putchar(char c)
 {
