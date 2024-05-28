@@ -300,6 +300,22 @@ void printf(const char *restrict format, ...)
 				print_float(va_arg(args, double), 16, 1, 1,
 					    minSize, precision, leadingZeros,
 					    altForm);
+			else if (*format == 'g')
+				print_float(va_arg(args, double), 10, 0, 0,
+					    minSize, precision, leadingZeros,
+					    1);
+			else if (*format == 'G')
+				print_float(va_arg(args, double), 10, 1, 0,
+					    minSize, precision, leadingZeros,
+					    1);
+			else if (*format == 'p') {
+				DEBUG_PRINT("0x");
+				print_int((uintptr_t)va_arg(args, void *), 16, 0,
+					  0, 0, 0, 0, 0, 0, 1, 0);
+			}	else if (*format == 'n') {
+				*va_arg(args, int *) = 0;
+			} else
+				putchar(*format);
 			escaped = 0;
 		} else if (*format == '%')
 			escaped = 1;
