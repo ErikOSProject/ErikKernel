@@ -1,3 +1,12 @@
+/**
+ * @file pl011.c
+ * @brief PL011 UART driver implementation for ARM architecture.
+ *
+ * This file contains the implementation of the PL011 UART driver for the ARM
+ * architecture. It provides functions to initialize the UART, send data over
+ * the serial port.
+ */
+
 #include <serial.h>
 
 #define DR_OFFSET 0x000
@@ -29,6 +38,16 @@ typedef struct {
 
 pl011 _pl011_default = { 0x9000000, 24000000, 115200, 8, 1 };
 
+/**
+ * @brief Calculates the divisors for the PL011 UART device.
+ *
+ * This function computes the integer and fractional divisors required
+ * for configuring the baud rate of the PL011 UART device.
+ *
+ * @param dev Pointer to the PL011 device structure.
+ * @param integer Pointer to a variable where the calculated integer divisor will be stored.
+ * @param fractional Pointer to a variable where the calculated fractional divisor will be stored.
+ */
 static void pl011_calculate_divisors(const pl011 *dev, uint32_t *integer,
 				     uint32_t *fractional)
 {
@@ -38,12 +57,28 @@ static void pl011_calculate_divisors(const pl011 *dev, uint32_t *integer,
 	*integer = (div >> 6) & 0xffff;
 }
 
+/**
+ * @brief Waits for the PL011 UART transmission to complete.
+ *
+ * This function blocks until the transmission of data is complete on the
+ * specified PL011 UART device.
+ *
+ * @param dev Pointer to the PL011 UART device structure.
+ */
 static void pl011_wait_tx_complete(const pl011 *dev)
 {
 	while ((*REG(dev, FR_OFFSET) & FR_BUSY) != 0) {
 	}
 }
 
+/**
+ * @brief Resets the PL011 UART device.
+ *
+ * This function performs a reset operation on the specified PL011 UART device.
+ *
+ * @param dev Pointer to the PL011 UART device structure.
+ * @return Returns 0 on success, or a negative error code on failure.
+ */
 int pl011_reset(pl011 *dev)
 {
 	uint32_t *cr = REG(dev, CR_OFFSET);
@@ -71,11 +106,29 @@ int pl011_reset(pl011 *dev)
 	return 0;
 }
 
+/**
+ * @brief Sets up the PL011 UART device.
+ *
+ * This function initializes the PL011 UART device specified by the
+ * provided device structure pointer. It configures the necessary
+ * registers and settings to prepare the device for operation.
+ *
+ * @param dev Pointer to the PL011 device structure.
+ * @return Status code indicating success or failure of the setup operation.
+ */
 int pl011_setup(pl011 *dev)
 {
 	return pl011_reset(dev);
 }
 
+/**
+ * @brief Sends a character to the PL011 UART device.
+ *
+ * This function writes a single character to the specified PL011 UART device.
+ *
+ * @param dev Pointer to the PL011 UART device structure.
+ * @param c The character to be transmitted.
+ */
 void pl011_putchar(pl011 *dev, char c)
 {
 	pl011_wait_tx_complete(dev);

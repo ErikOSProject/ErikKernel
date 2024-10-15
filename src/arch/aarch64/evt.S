@@ -1,3 +1,11 @@
+/**
+ * @file evt.S
+ * @brief Exception vector table for AArch64
+ *
+ * This file contains the exception vector table for the AArch64 architecture.
+ * The contained routines act as wrappers around the C exception handlers.
+ */
+
 save_corruptible:
 stp x0, x1, [sp, #-16]!
 stp x2, x3, [sp, #-16]!

@@ -1,3 +1,10 @@
+/**
+ * @file memory.h
+ * @brief Memory management functions.
+ *
+ * This file contains the declarations for the memory management functions.
+ */
+
 #ifndef _MEMORY_H
 #define _MEMORY_H
 

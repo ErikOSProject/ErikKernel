@@ -1,3 +1,10 @@
+/**
+ * @file paging.h
+ * @brief Paging functions for x86_64 architecture.
+ *
+ * This file contains the declarations for the paging functions used in the x86_64 architecture.
+ */
+
 #ifndef _PAGING_H
 #define _PAGING_H
 

@@ -1,3 +1,12 @@
+/**
+ * @file paging.c
+ * @brief Paging implementation for AArch64 architecture.
+ *
+ * This file contains the implementation of the paging functions for the AArch64 architecture.
+ * It allows for the creation of page tables, mapping and unmapping of virtual memory to physical memory,
+ * and setting up the page tables for the system.
+ */
+
 #include <debug.h>
 #include <erikboot.h>
 #include <memory.h>
@@ -29,18 +38,40 @@ typedef struct {
 uint64_t *tables = NULL;
 uint64_t *ttbr1_el1 = NULL;
 
+/**
+ * @brief Retrieves the value of the Translation Table Base Register 0 (TTBR0).
+ *
+ * This function is used to obtain the current value of TTBR0, which holds the 
+ * base address of the translation table for the lower half of the address space 
+ * in AArch64 architecture.
+ */
 void get_ttbr0(void)
 {
 	if (!tables)
 		asm volatile("mrs %0, ttbr0_el1;" : "=r"(tables));
 }
 
+/**
+ * @brief Retrieves the value of the Translation Table Base Register 1 (TTBR1).
+ *
+ * This function is used to obtain the current value of TTBR1, which holds the 
+ * base address of the translation table for the higher half of the address space 
+ * in AArch64 architecture.
+ *
+ * @return The value of TTBR1.
+ */
 void get_ttbr1(void)
 {
 	if (!ttbr1_el1)
 		asm volatile("mrs %0, ttbr1_el1;" : "=r"(ttbr1_el1));
 }
 
+/**
+ * @brief Converts generic paging flags to architecture-specific flags for AArch64.
+ *
+ * @param flags The generic paging flags to be converted.
+ * @return The architecture-specific paging flags.
+ */
 uint64_t paging_flags_to_arch(uint64_t flags)
 {
 	uint64_t arch_flags = P_AARCH64_AF;
@@ -51,6 +82,13 @@ uint64_t paging_flags_to_arch(uint64_t flags)
 	return arch_flags;
 }
 
+/**
+ * @brief Creates a new page table.
+ *
+ * This function allocates and initializes a new page table for the AArch64 architecture.
+ *
+ * @return A pointer to the newly created page table.
+ */
 uint64_t *paging_create_table(void)
 {
 	uintptr_t table = find_free_frames(1);
@@ -61,6 +99,14 @@ uint64_t *paging_create_table(void)
 	return (uint64_t *)table;
 }
 
+/**
+ * @brief Maps a virtual address to a physical address in the page tables.
+ *
+ * @param tables A pointer to the page tables.
+ * @param vaddr The virtual address to be mapped.
+ * @param paddr The physical address to map to the virtual address.
+ * @param flags The paging flags to be set for the mapping.
+ */
 void paging_map_page(uint64_t *tables, uintptr_t vaddr, uintptr_t paddr,
 		     uint64_t flags)
 {
@@ -114,6 +160,14 @@ void paging_map_page(uint64_t *tables, uintptr_t vaddr, uintptr_t paddr,
 	asm volatile("isb;");
 }
 
+/**
+ * @brief Unmaps a page from the page tables.
+ *
+ * This function removes the mapping of a virtual address from the page tables.
+ *
+ * @param tables Pointer to the page tables.
+ * @param vaddr The virtual address to unmap.
+ */
 void paging_unmap_page(uint64_t *tables, uintptr_t vaddr)
 {
 	uint64_t pgd_index = PGD_INDEX(vaddr);

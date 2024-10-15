@@ -1,3 +1,10 @@
+/**
+ * @file heap.h
+ * @brief Dynamic memory allocation functions.
+ *
+ * This file contains the declarations for the dynamic memory allocation functions.
+ */
+
 #ifndef _HEAP_H
 #define _HEAP_H
 

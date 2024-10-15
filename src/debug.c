@@ -1,8 +1,26 @@
+/**
+ * @file debug.c
+ * @brief Implementation of debugging utilities for ErikKernel.
+ *
+ * This file contains the implementation of various debugging utilities
+ * used within the ErikKernel project. The functions and macros defined
+ * here are intended to assist developers in diagnosing and resolving
+ * issues within the kernel.
+ */
+
 #include <debug.h>
 #include <erikboot.h>
 #include <memory.h>
 #include <stdarg.h>
 
+/**
+ * @brief Outputs a character to the serial console.
+ *
+ * This function sends the specified character to the serial console.
+ * It is often used for debugging purposes to display characters or messages.
+ *
+ * @param c The character to be output.
+ */
 void putchar(char c)
 {
 	if (c == '\n')
@@ -10,6 +28,21 @@ void putchar(char c)
 	serial_putchar(c);
 }
 
+/**
+ * @brief Prints an integer value with specified formatting options.
+ *
+ * @param value The integer value to be printed.
+ * @param base The numerical base for the output (e.g., 10 for decimal, 16 for hexadecimal).
+ * @param sign Indicates if the value is signed (non-zero) or unsigned (zero).
+ * @param capital If non-zero, use uppercase letters for bases greater than 10 (e.g., 'A'-'F' for hexadecimal).
+ * @param padding The minimum width of the output. If the number is shorter, it will be padded.
+ * @param precision The minimum number of digits to be printed. If the number has fewer digits, it will be padded with zeros.
+ * @param leftJustified If non-zero, the output will be left-justified within the padding width.
+ * @param plusSigned If non-zero, a plus sign will be printed for positive numbers.
+ * @param spaceSigned If non-zero, a space will be printed before positive numbers.
+ * @param leadingZeros If non-zero, the number will be padded with leading zeros instead of spaces.
+ * @param extraLeadingZero If non-zero, an extra leading zero will be added (useful for certain bases like octal).
+ */
 void print_int(unsigned long value, int base, int sign, int capital,
 	       int padding, int precision, int leftJustified, int plusSigned,
 	       int spaceSigned, int leadingZeros, int extraLeadingZero)
@@ -62,6 +95,18 @@ void print_int(unsigned long value, int base, int sign, int capital,
 			putchar(leadingZeros ? '0' : ' ');
 }
 
+/**
+ * @brief Prints a floating-point number with specified formatting options.
+ *
+ * @param value The floating-point number to print.
+ * @param base The numerical base for the output (e.g., 10 for decimal, 16 for hexadecimal).
+ * @param capital If non-zero, use uppercase letters for bases greater than 10 (e.g., 'A'-'F' for hexadecimal).
+ * @param emode If non-zero, use scientific notation.
+ * @param padding The number of characters to pad the output to.
+ * @param precision The number of digits to print after the decimal point.
+ * @param leadingZeros If non-zero, pad the output with leading zeros.
+ * @param alwaysPoint If non-zero, always include a decimal point in the output.
+ */
 void print_float(double value, int base, int capital, int emode, int padding,
 		 int precision, int leadingZeros, int alwaysPoint)
 {
@@ -110,6 +155,14 @@ void print_float(double value, int base, int capital, int emode, int padding,
 	}
 }
 
+/**
+ * @brief Prints a string with specified formatting options.
+ *
+ * @param value The string to be printed.
+ * @param precision The maximum number of characters to print from the string.
+ * @param padding The minimum width of the printed string. If the string is shorter, it will be padded with spaces.
+ * @param leftJustified If non-zero, the string will be left-justified within the padding. Otherwise, it will be right-justified.
+ */
 void print_string(char *value, int precision, int padding, int leftJustified)
 {
 	size_t valueLen = strlen(value);
@@ -129,6 +182,16 @@ void print_string(char *value, int precision, int padding, int leftJustified)
 			putchar(' ');
 }
 
+/**
+ * @brief Parses a long integer value from a variable argument list.
+ *
+ * This function extracts a long integer value from a variable argument list
+ * based on the provided length modifier.
+ *
+ * @param lmod The length modifier string.
+ * @param args The variable argument list.
+ * @return The extracted long integer value.
+ */
 long lmod_value(char *lmod, va_list *args)
 {
 	long val;
@@ -153,6 +216,17 @@ long lmod_value(char *lmod, va_list *args)
 	return val;
 }
 
+/**
+ * @brief Custom implementation of the printf function.
+ *
+ * This function formats and prints data to the standard output.
+ *
+ * @param format A null-terminated string specifying how to interpret the data.
+ *               It can contain format specifiers that are replaced by the values
+ *               specified in subsequent additional arguments.
+ * @param ...    Additional arguments specifying the data to be printed according
+ *               to the format specifiers in the format string.
+ */
 void printf(const char *restrict format, ...)
 {
 	va_list args;

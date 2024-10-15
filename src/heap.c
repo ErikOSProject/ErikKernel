@@ -1,3 +1,13 @@
+/**
+ * @file heap.c
+ * @brief Implementation of the heap memory allocator.
+ *
+ * This file contains the implementation of the heap memory allocator used
+ * within the ErikKernel project. The heap allocator provides functions for
+ * allocating and freeing memory on the heap, as well as initializing the heap
+ * memory region.
+ */
+
 #include <debug.h>
 #include <erikboot.h>
 #include <heap.h>
@@ -11,6 +21,14 @@ heap_block *last_block = NULL;
 
 extern char _kernel_end;
 
+/**
+ * @brief Calculates the virtual start address for the heap.
+ *
+ * This function determines the starting virtual address for the heap based on
+ * the provided boot information.
+ *
+ * @param boot_info A pointer to the BootInfo structure containing boot-related information.
+ */
 void heap_calculate_virtual_start(BootInfo *boot_info)
 {
 	if (boot_info->InitrdBase)
@@ -28,6 +46,16 @@ void heap_calculate_virtual_start(BootInfo *boot_info)
 	heap_end = heap_start + 0x1000;
 }
 
+/**
+ * @brief Splits a heap block into two blocks.
+ *
+ * This function takes a pointer to the first block and a size, and splits the 
+ * first block into two blocks. The first block will have the specified size, 
+ * and the second block will contain the remaining space.
+ *
+ * @param first Pointer to the first heap block to be split.
+ * @param size The size of the first block after the split.
+ */
 void heap_split_block(heap_block *first, size_t size)
 {
 	heap_block *second =
@@ -47,6 +75,17 @@ void heap_split_block(heap_block *first, size_t size)
 		last_block = second;
 }
 
+/**
+ * @brief Merges two adjacent heap blocks into a single block.
+ *
+ * This function takes two adjacent heap blocks and merges them into a single
+ * block. The first block should be the one that comes before the second block
+ * in memory. After merging, the first block will encompass the memory of both
+ * blocks, and the second block will no longer be valid.
+ *
+ * @param first Pointer to the first heap block.
+ * @param second Pointer to the second heap block.
+ */
 void heap_merge_blocks(heap_block *first, heap_block *second)
 {
 	if (second->next)
@@ -58,6 +97,15 @@ void heap_merge_blocks(heap_block *first, heap_block *second)
 		last_block = first;
 }
 
+/**
+ * @brief Expands the heap to accommodate more memory.
+ *
+ * This function attempts to increase the size of the heap to provide
+ * additional memory for allocation. It does this by mapping a new page
+ * of memory and adding it to the heap as a new block.
+ *
+ * @return true if the heap was successfully expanded, false otherwise.
+ */
 bool expand_heap(void)
 {
 	uintptr_t page = find_free_frames(1);
@@ -82,6 +130,14 @@ bool expand_heap(void)
 	return true;
 }
 
+/**
+ * @brief Initializes the heap memory management system.
+ *
+ * This function sets up the heap using the provided boot information.
+ *
+ * @param boot_info A pointer to the BootInfo structure containing
+ *                  information about the system's memory layout.
+ */
 void heap_init(BootInfo *boot_info)
 {
 	heap_calculate_virtual_start(boot_info);
@@ -101,6 +157,16 @@ void heap_init(BootInfo *boot_info)
 	first_block->used = false;
 }
 
+/**
+ * @brief Allocates a block of memory on the heap. (helper function)
+ *
+ * This function allocates a block of memory of the specified size on the heap.
+ * Returns NULL if the allocation fails. Use malloc() instead of this function to
+ * allocate memory allowing the heap to expand if necessary.
+ *
+ * @param size The size of the memory block to allocate.
+ * @return A pointer to the allocated memory block, or NULL if the allocation fails.
+ */
 heap_block *do_malloc(size_t size)
 {
 	heap_block *i = first_block;
@@ -116,6 +182,16 @@ heap_block *do_malloc(size_t size)
 	return NULL;
 }
 
+/**
+ * @brief Allocates a block of memory on the heap.
+ *
+ * This function allocates a block of memory of the specified size on the heap.
+ * If the allocation fails, it attempts to expand the heap to accommodate the
+ * requested memory size.
+ *
+ * @param size The size of the memory block to allocate.
+ * @return A pointer to the allocated memory block, or NULL if the allocation fails.
+ */
 void *malloc(size_t size)
 {
 	heap_block *i = NULL;
@@ -127,8 +203,14 @@ void *malloc(size_t size)
 	}
 }
 
+/**
+ * @brief Frees the memory space pointed to by ptr, which must have been returned by a previous call to malloc().
+ *
+ * @param ptr Pointer to the memory to be freed.
+ */
 void free(void *ptr)
 {
+	// TODO: Do check if ptr is a valid pointer (inside the heap)
 	heap_block *i = (heap_block *)((uintptr_t)ptr - sizeof(heap_block));
 	i->used = false;
 

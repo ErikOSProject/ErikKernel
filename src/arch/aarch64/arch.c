@@ -1,3 +1,10 @@
+/**
+ * @file arch.c
+ * @brief Architecture-specific initialization code.
+ *
+ * This file contains the implementation of the architecture-specific initialization code for AArch64 architecture.
+ */
+
 #include <arch.h>
 #include <debug.h>
 
@@ -70,6 +77,13 @@ char *exception_names[] = { "unknown",
 			    0,
 			    0 };
 
+/**
+ * @brief Initializes the architecture-specific components.
+ *
+ * This function is responsible for setting up and initializing
+ * architecture-specific components and configurations for the
+ * AArch64 architecture.
+ */
 void arch_init(void)
 {
 	asm volatile("msr vbar_el1, %0;"
@@ -79,6 +93,16 @@ void arch_init(void)
 	get_ttbr1();
 }
 
+/**
+ * @brief Handles synchronous exceptions.
+ *
+ * This function is called to handle synchronous exceptions that occur during
+ * the execution of the kernel. It processes the exception based on the provided
+ * frame.
+ *
+ * @param frame A pointer to the exception frame containing the state of the
+ *              processor at the time of the exception.
+ */
 void handle_synchronous_exception(uint64_t *frame)
 {
 	(void)frame;

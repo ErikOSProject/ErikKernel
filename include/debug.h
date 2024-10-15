@@ -1,3 +1,10 @@
+/**
+ * @file debug.h
+ * @brief Debugging utilities.
+ *
+ * This file contains the declarations for the debugging utilities used in the kernel.
+ */
+
 #ifndef _DEBUG_H
 #define _DEBUG_H
 

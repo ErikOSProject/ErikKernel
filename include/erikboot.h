@@ -1,3 +1,11 @@
+/**
+ * @file erikboot.h
+ * @brief Boot information structure.
+ *
+ * This file contains the definition of the boot information structure
+ * that is passed to the kernel by the ErikBoot bootloader.
+ */
+
 #ifndef _ERIKBOOT_H
 #define _ERIKBOOT_H
 

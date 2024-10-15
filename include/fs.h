@@ -1,3 +1,10 @@
+/**
+ * @file fs.h
+ * @brief Filesystem functions.
+ *
+ * This file contains the declarations for the filesystem functions.
+ */
+
 #ifndef _FS_H
 #define _FS_H
 

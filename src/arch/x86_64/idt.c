@@ -1,3 +1,11 @@
+/**
+ * @file idt.c
+ * @brief Interrupt Descriptor Table implementation for x86_64 architecture.
+ *
+ * This file contains the implementation of the Interrupt Descriptor Table for the x86_64 architecture.
+ * It allows for the initialization of the IDT and the handling of interrupts and exceptions.
+ */
+
 #include <debug.h>
 
 typedef struct {
@@ -86,6 +94,15 @@ char *register_names[] = {
 
 extern void *isr_stub_table[];
 
+/**
+ * @brief Handles the interrupt service routine (ISR).
+ *
+ * This function is called when an interrupt occurs. It processes the
+ * interrupt and performs the necessary actions to handle it.
+ *
+ * @param frame A pointer to the interrupt frame containing the state
+ *              of the CPU registers at the time of the interrupt.
+ */
 void isr_handler(interrupt_frame *frame)
 {
 	uint64_t cr2;
@@ -101,6 +118,16 @@ void isr_handler(interrupt_frame *frame)
 	asm volatile("1: cli; hlt; jmp 1b");
 }
 
+/**
+ * @brief Sets an Interrupt Descriptor Table (IDT) entry.
+ *
+ * This function sets an entry in the IDT with the specified vector, 
+ * interrupt service routine (ISR) address, and flags.
+ *
+ * @param vector The interrupt vector number.
+ * @param isr Pointer to the interrupt service routine.
+ * @param flags Flags for the IDT entry.
+ */
 void idt_set_descriptor(uint8_t vector, void *isr, uint8_t flags)
 {
 	interrupt_descriptor *descriptor = &idt[vector];
@@ -114,6 +141,13 @@ void idt_set_descriptor(uint8_t vector, void *isr, uint8_t flags)
 	descriptor->reserved = 0;
 }
 
+/**
+ * @brief Initializes the Interrupt Descriptor Table (IDT).
+ *
+ * This function sets up the IDT for the x86_64 architecture, which is
+ * essential for handling interrupts and exceptions. It configures the
+ * necessary entries in the IDT to ensure proper interrupt handling.
+ */
 void idt_init(void)
 {
 	for (uint8_t vector = 0; vector < 32; vector++)

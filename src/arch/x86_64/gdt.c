@@ -1,3 +1,11 @@
+/**
+ * @file gdt.c
+ * @brief Global Descriptor Table implementation for x86_64 architecture.
+ *
+ * This file contains the implementation of the Global Descriptor Table for the x86_64 architecture.
+ * It allows for the initialization of the GDT and the setting of segment descriptors.
+ */
+
 #include <debug.h>
 
 typedef struct {
@@ -19,6 +27,17 @@ __attribute__((aligned(0x10))) static segment_descriptor gdt[6];
 static gdtr _gdtr = { .limit = (uint16_t)sizeof(gdt) - 1,
 		      .base = (uintptr_t)gdt };
 
+/**
+ * @brief Sets a descriptor in the Global Descriptor Table (GDT).
+ *
+ * This function configures a GDT descriptor with the specified base address,
+ * limit, and access flags. The GDT is used in x86_64 architecture to define
+ * the characteristics of the various memory segments used by the CPU.
+ *
+ * @param selector The index of the descriptor in the GDT.
+ * @param base The base address of the segment.
+ * @param limit The limit of the segment.
+ */
 void gdt_set_descriptor(uint8_t selector, uint32_t base, uint32_t limit,
 			uint8_t access, uint8_t flags)
 {
@@ -33,6 +52,13 @@ void gdt_set_descriptor(uint8_t selector, uint32_t base, uint32_t limit,
 	descriptor->flags = flags;
 }
 
+/**
+ * @brief Initializes the Global Descriptor Table (GDT) for the x86_64 architecture.
+ *
+ * This function sets up the GDT, which is a data structure used by the x86_64
+ * architecture to define the characteristics of the various memory segments
+ * used in a system. The GDT is essential for memory management and protection.
+ */
 void gdt_init(void)
 {
 	gdt_set_descriptor(0, 0, 0, 0, 0);

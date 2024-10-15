@@ -1,3 +1,10 @@
+/**
+ * @file serial.h
+ * @brief Serial communication interface.
+ *
+ * This file contains the definitions for the serial communication interface.
+ */
+
 #ifndef _SERIAL_H
 #define _SERIAL_H
 

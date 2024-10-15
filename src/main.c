@@ -1,3 +1,8 @@
+/**
+ * @file main.c
+ * @brief Main entry point for the ErikKernel project.
+ */
+
 #include <arch.h>
 #include <debug.h>
 #include <erikboot.h>
@@ -6,6 +11,15 @@
 #include <memory.h>
 #include <paging.h>
 
+/**
+ * @brief Entry point for the kernel.
+ * 
+ * This function is marked with [[noreturn]] indicating that it will not return to the caller.
+ * It serves as the main entry point for the kernel and is responsible for initializing
+ * the system using the provided boot information.
+ * 
+ * @param boot_info A structure containing information passed by the bootloader.
+ */
 [[noreturn]] void kernel_main(BootInfo boot_info)
 {
 	DEBUG_INIT();
