@@ -9,6 +9,8 @@
 #ifndef _ARCH_H
 #define _ARCH_H
 
-void arch_init(void);
+#include <erikboot.h>
+
+void arch_init(BootInfo *boot_info);
 
 #endif //_ARCH_H

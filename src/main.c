@@ -3,6 +3,7 @@
  * @brief Main entry point for the ErikKernel project.
  */
 
+#include <acpi.h>
 #include <arch.h>
 #include <debug.h>
 #include <erikboot.h>
@@ -25,12 +26,12 @@
 	DEBUG_INIT();
 	DEBUG_PRINTF("Hello world from ErikKernel!\n\n");
 
-	arch_init();
+	arch_init(&boot_info);
 	page_frame_allocator_init(&boot_info);
 	heap_init(&boot_info);
 	fs_init(&boot_info);
+	smp_init(&boot_info);
 	DEBUG_PRINTF("OK!\n");
-
 	for (;;)
-		(void)boot_info;
+		asm volatile("hlt");
 }

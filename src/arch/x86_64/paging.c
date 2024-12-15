@@ -23,6 +23,8 @@
 
 #define TABLE_DEFAULT (P_X64_PRESENT | P_X64_WRITE | P_X64_USER)
 
+extern uintptr_t ap_pml4;
+
 uint64_t *tables = NULL;
 
 /**
@@ -38,6 +40,7 @@ void get_pml4(void)
 {
 	if (!tables)
 		asm volatile("movq %%cr3, %0" : "=r"(tables));
+	ap_pml4 = (uintptr_t)tables;
 }
 
 /**

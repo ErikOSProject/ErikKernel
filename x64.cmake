@@ -13,6 +13,8 @@ add_compile_options(-target ${CMAKE_C_COMPILER_TARGET})
 add_link_options(-target ${CMAKE_C_COMPILER_TARGET})
 
 set(ARCH_SOURCES
+    src/arch/x86_64/ap_entry.S
+    src/arch/x86_64/apic.c
     src/arch/x86_64/arch.c
     src/arch/x86_64/gdt.c
     src/arch/x86_64/idt.c
