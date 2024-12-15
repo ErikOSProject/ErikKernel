@@ -384,9 +384,9 @@ void printf(const char *restrict format, ...)
 					    1);
 			else if (*format == 'p') {
 				DEBUG_PRINT("0x");
-				print_int((uintptr_t)va_arg(args, void *), 16, 0,
-					  0, 0, 0, 0, 0, 0, 1, 0);
-			}	else if (*format == 'n') {
+				print_int((uintptr_t)va_arg(args, void *), 16,
+					  0, 0, 0, 0, 0, 0, 0, 1, 0);
+			} else if (*format == 'n') {
 				*va_arg(args, int *) = 0;
 			} else
 				putchar(*format);
