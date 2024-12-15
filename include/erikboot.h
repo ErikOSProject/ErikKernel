@@ -22,6 +22,18 @@ typedef struct {
 } MMapEntry;
 
 typedef struct {
+	uint32_t Data1;
+	uint16_t Data2;
+	uint16_t Data3;
+	uint8_t Data4[8];
+} EFI_GUID;
+
+typedef struct {
+	EFI_GUID VendorGuid;
+	void *VendorTable;
+} EFIConfigurationTable;
+
+typedef struct {
 	void *FBBase;
 	size_t FBSize;
 	unsigned int FBWidth;
@@ -32,6 +44,8 @@ typedef struct {
 	size_t MMapEntrySize;
 	char *InitrdBase;
 	size_t InitrdSize;
+	EFIConfigurationTable *EFIConfigurationTableBase;
+	size_t EFIConfigurationTableEntryCount;
 } BootInfo;
 
 #endif //_ERIKBOOT_H
