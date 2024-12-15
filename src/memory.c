@@ -120,12 +120,12 @@ char *strcat(char *destination, const char *source)
  * @return An integer less than, equal to, or greater than zero if the first n bytes of str1 
  *         is found, respectively, to be less than, to match, or be greater than the first n bytes of str2.
  */
-int memcmp(const char *str1, const char *str2, size_t n)
+int memcmp(const void *str1, const void *str2, size_t n)
 {
 	size_t i = 0;
-	while (str1[i] == str2[i] && i < n)
+	while (((const char *)str1)[i] == ((const char *)str2)[i] && i < n)
 		i++;
-	return str1[i] - str2[i];
+	return (i < n) ? ((const char *)str1)[i] - ((const char *)str2)[i] : 0;
 }
 
 /**
