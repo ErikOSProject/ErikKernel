@@ -14,6 +14,8 @@
 #define APIC_ICR_LOW 0xC0
 #define APIC_ICR_HIGH 0xC4
 
+void gdt_init(void);
+
 extern uintptr_t ap_entry;
 extern uintptr_t ap_callback;
 extern uintptr_t ap_stacks;
@@ -33,6 +35,7 @@ volatile bool ap_ready = false;
  */
 void test_ap(uint64_t id)
 {
+	gdt_init();
 	DEBUG_PRINTF("Hello from AP %d!\n", id);
 	ap_ready = true;
 	for (;;)
