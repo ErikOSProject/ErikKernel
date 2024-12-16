@@ -98,6 +98,8 @@ isr_no_err_stub 29
 isr_err_stub    30
 isr_no_err_stub 31
 
+isr_no_err_stub 48
+
 .macro isr_name no
 .quad isr_stub_\no
 .endm
@@ -136,3 +138,5 @@ isr_stub_table:
     isr_name 29
     isr_name 30
     isr_name 31
+
+    isr_name 48

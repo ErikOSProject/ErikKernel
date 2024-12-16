@@ -7,12 +7,23 @@
  */
 
 #include <acpi.h>
+#include <arch.h>
 #include <debug.h>
 #include <memory.h>
 
+typedef struct {
+	uint32_t *address;
+	uint32_t base;
+	uint8_t length;
+} IOAPIC;
+
+#define APIC_EOI 0x2C
 #define APIC_ERROR 0xA0
 #define APIC_ICR_LOW 0xC0
 #define APIC_ICR_HIGH 0xC4
+#define APIC_LVT_TIMER 0xC8
+#define APIC_TIMER_INITCNT 0xE0
+#define APIC_DIV_TIMER 0xFA
 
 void gdt_init(void);
 void load_idt(void);
@@ -22,9 +33,13 @@ extern uintptr_t ap_callback;
 extern uintptr_t ap_stacks;
 
 volatile uint32_t *lapic = NULL;
+volatile bool ap_ready = false;
+
 uint64_t lapic_ids[256];
 uint8_t numcores = 0;
-volatile bool ap_ready = false;
+
+IOAPIC ioapics[256];
+uint8_t numioapics = 0;
 
 /**
  * @brief AP entry point.
@@ -34,26 +49,28 @@ volatile bool ap_ready = false;
  *
  * @param id The ID of the AP.
  */
-void test_ap(uint64_t id)
+void test_ap(uint64_t)
 {
 	gdt_init();
 	load_idt();
-	DEBUG_PRINTF("Hello from AP %d!\n", id);
+	lapic[0x3c] = 0x1FF; // enable local APIC
+	timer_init();
+	asm volatile("sti");
 	ap_ready = true;
 	for (;;)
 		asm volatile("hlt");
 }
 
 /**
- * @brief Gets the Local APIC address from the MADT.
+ * @brief Initializes the Local APIC.
  *
- * This function searches the MADT table for the Local APIC address and stores
- * it in the lapic variable. It also retrieves the LAPIC IDs of all cores in the
- * system and stores them in the lapic_ids array.
+ * This function initializes the Local APIC by finding the MADT table in the ACPI
+ * tables and extracting the Local APIC address and IDs of the APs in the system.
+ * It also discovers the IO APICs in the system.
  *
  * @param boot_info A pointer to the BootInfo structure containing boot-related information.
  */
-void get_lapic(BootInfo *boot_info)
+void apic_init(BootInfo *boot_info)
 {
 	XSDP *xsdp = find_xsdp(boot_info);
 	ACPISDTHeader *madt = find_acpi_table("APIC", boot_info);
@@ -67,6 +84,16 @@ void get_lapic(BootInfo *boot_info)
 		// Processor Local APIC
 		if (madt_entry[0] == 0)
 			lapic_ids[numcores++] = madt_entry[2];
+		// IO APIC
+		else if (madt_entry[0] == 1) {
+			uint32_t *ioapic = *(uint32_t **)((uintptr_t)madt_entry + 4);
+			ioapics[numioapics].address = ioapic;
+			ioapics[numioapics].base =
+				*(uint32_t *)((uintptr_t)madt_entry + 8);
+			ioapic[0] = 1;
+			ioapics[numioapics].length = 1 + (ioapic[4] >> 16) & 0xFF;
+			numioapics++;
+		}
 		madt_entry += madt_entry[1];
 	}
 }
@@ -168,4 +195,30 @@ void smp_init(BootInfo *)
 	for (uint8_t i = 0; i < numcores; i++)
 		if (lapic_ids[i] != bspid)
 			start_ap(i);
+
+	timer_init();
+}
+
+/**
+ * @brief Initializes the timer.
+ *
+ * This function initializes the Local APIC timer to generate periodic interrupts.
+ *
+ * @param boot_info A pointer to the BootInfo structure containing boot-related information.
+ */
+void timer_init(void)
+{
+	lapic[APIC_DIV_TIMER] = 3; 		// divide by 16
+	lapic[APIC_LVT_TIMER] = 0x20030;  // periodic mode, vector 0x30
+	lapic[APIC_TIMER_INITCNT] = 1000000;
+}
+
+/**
+ * @brief Handles a timer tick.
+ *
+ * This function is called by the timer interrupt handler to handle a timer tick.
+ */
+void timer_tick(void)
+{
+	lapic[APIC_EOI] = 0;
 }

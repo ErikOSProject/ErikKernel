@@ -12,5 +12,6 @@
 #include <erikboot.h>
 
 void arch_init(BootInfo *boot_info);
+void timer_init(void);
 
 #endif //_ARCH_H

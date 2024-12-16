@@ -10,7 +10,7 @@
 void gdt_init(void);
 void idt_init(void);
 void get_pml4(void);
-void get_lapic(BootInfo *boot_info);
+void apic_init(BootInfo *boot_info);
 
 /**
  * @brief Initializes the architecture-specific components.
@@ -24,5 +24,5 @@ void arch_init(BootInfo *boot_info)
 	gdt_init();
 	idt_init();
 	get_pml4();
-	get_lapic(boot_info);
+	apic_init(boot_info);
 }

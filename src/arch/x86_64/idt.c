@@ -94,16 +94,19 @@ char *register_names[] = {
 
 extern void *isr_stub_table[];
 
+void timer_tick(void);
+void timer_propagate(void);
+
 /**
- * @brief Handles the interrupt service routine (ISR).
+ * @brief Handles a panic.
  *
- * This function is called when an interrupt occurs. It processes the
- * interrupt and performs the necessary actions to handle it.
+ * This function is called when a panic occurs. It prints the state of the CPU registers
+ * at the time of the panic and halts the system.
  *
  * @param frame A pointer to the interrupt frame containing the state
- *              of the CPU registers at the time of the interrupt.
+ *              of the CPU registers at the time of the panic.
  */
-void isr_handler(interrupt_frame *frame)
+[[noreturn]] void panic_handler(interrupt_frame *frame)
 {
 	uint64_t cr2;
 	asm volatile("movq %%cr2, %0" : "=r"(cr2));
@@ -115,7 +118,28 @@ void isr_handler(interrupt_frame *frame)
 			     ((uint64_t *)frame)[14 - i]);
 	if (frame->isr_number == 0xE)
 		DEBUG_PRINTF("Fault address: %#016lX\n", cr2);
-	asm volatile("1: cli; hlt; jmp 1b");
+	for (;;)
+		asm volatile("hlt");
+}
+
+/**
+ * @brief Handles the interrupt service routine (ISR).
+ *
+ * This function is called when an interrupt occurs. It processes the
+ * interrupt and performs the necessary actions to handle it.
+ *
+ * @param frame A pointer to the interrupt frame containing the state
+ *              of the CPU registers at the time of the interrupt.
+ */
+interrupt_frame *isr_handler(interrupt_frame *frame)
+{
+	if (frame->isr_number < 32)
+		panic_handler(frame);
+
+	else if (frame->isr_number == 48)
+		timer_tick();
+
+	return frame;
 }
 
 /**
@@ -161,8 +185,11 @@ void load_idt(void)
  */
 void idt_init(void)
 {
-	for (uint8_t vector = 0; vector < 32; vector++)
+	uint8_t vector = 0;
+	for (; vector < 0x20; vector++)
 		idt_set_descriptor(vector, isr_stub_table[vector], 0x8E);
+	for (; vector < 0x21; vector++)
+		idt_set_descriptor(0x10 + vector, isr_stub_table[vector], 0x8E);
 
 	load_idt();
 }
