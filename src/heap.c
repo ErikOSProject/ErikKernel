@@ -210,8 +210,9 @@ void *malloc(size_t size)
  */
 void free(void *ptr)
 {
-	// TODO: Do check if ptr is a valid pointer (inside the heap)
 	heap_block *i = (heap_block *)((uintptr_t)ptr - sizeof(heap_block));
+	if ((uintptr_t)i < heap_start || (uintptr_t)i >= heap_end)
+		return;
 	i->used = false;
 
 	if (i->next && !i->next->used)
