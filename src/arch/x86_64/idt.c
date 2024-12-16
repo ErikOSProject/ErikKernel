@@ -142,6 +142,17 @@ void idt_set_descriptor(uint8_t vector, void *isr, uint8_t flags)
 }
 
 /**
+ * @brief Loads the Interrupt Descriptor Table (IDT).
+ *
+ * This function loads the IDT by writing the address of the IDT to the
+ * IDTR register and enabling interrupts.
+ */
+void load_idt(void)
+{
+	asm volatile("lidt %0; sti" : : "m"(_idtr));
+}
+
+/**
  * @brief Initializes the Interrupt Descriptor Table (IDT).
  *
  * This function sets up the IDT for the x86_64 architecture, which is
@@ -153,5 +164,5 @@ void idt_init(void)
 	for (uint8_t vector = 0; vector < 32; vector++)
 		idt_set_descriptor(vector, isr_stub_table[vector], 0x8E);
 
-	asm volatile("lidt %0; sti" : : "m"(_idtr));
+	load_idt();
 }
