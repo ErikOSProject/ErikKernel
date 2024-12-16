@@ -64,10 +64,10 @@ size_t strlen(const char *str)
  * @param n Number of bytes to copy.
  * @return A pointer to the destination memory area.
  */
-char *memcpy(char *destination, const char *source, size_t n)
+char *memcpy(void *destination, const void *source, size_t n)
 {
 	for (size_t i = 0; i < n; i++)
-		destination[i] = source[i];
+		((uint8_t *)destination)[i] = ((uint8_t *)source)[i];
 	return destination;
 }
 

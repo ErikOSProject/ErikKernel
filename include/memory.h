@@ -18,7 +18,7 @@ typedef struct {
 
 void *memset(void *destination, int c, size_t num);
 size_t strlen(const char *str);
-char *memcpy(char *destination, const char *source, size_t n);
+char *memcpy(void *destination, const void *source, size_t n);
 char *strcpy(char *destination, const char *source);
 char *strcat(char *destination, const char *source);
 int memcmp(const void *str1, const void *str2, size_t n);
