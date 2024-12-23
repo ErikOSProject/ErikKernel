@@ -7,44 +7,8 @@
  * provides the functionality required for serial input/output operations.
  */
 
-#include <serial.h>
-
-#define COM1 0x3f8
-#define UART_FREQ 115200
-
-/**
- * @brief Writes a byte to the specified port.
- *
- * This function sends the given 8-bit value to the I/O port specified by the
- * port address. It is typically used for low-level hardware communication.
- *
- * @param port The I/O port address to write to.
- * @param val The 8-bit value to write to the port.
- */
-static inline void outb(uint16_t port, uint8_t val)
-{
-	asm volatile("outb %b0, %w1" : : "a"(val), "Nd"(port) : "memory");
-}
-
-/**
- * @brief Reads a byte from the specified I/O port.
- *
- * @param port The I/O port to read from.
- * @return The byte read from the I/O port.
- */
-static inline uint8_t inb(uint16_t port)
-{
-	uint8_t ret;
-	asm volatile("inb %w1, %b0" : "=a"(ret) : "Nd"(port) : "memory");
-	return ret;
-}
-
-typedef struct {
-	uint64_t base_port;
-	uint32_t baudrate;
-	uint32_t data_bits;
-	uint32_t stop_bits;
-} x86_serial;
+#include <arch/x86_64/io.h>
+#include <arch/x86_64/serial.h>
 
 x86_serial _x86_serial_default = { COM1, 115200, 8, 1 };
 

@@ -8,32 +8,13 @@
 
 #include <acpi.h>
 #include <arch.h>
-#include <debug.h>
 #include <memory.h>
 
-typedef struct {
-	uint32_t *address;
-	uint32_t base;
-	uint8_t length;
-} IOAPIC;
-
-#define APIC_EOI 0x2C
-#define APIC_ERROR 0xA0
-#define APIC_ICR_LOW 0xC0
-#define APIC_ICR_HIGH 0xC4
-#define APIC_LVT_TIMER 0xC8
-#define APIC_TIMER_INITCNT 0xE0
-#define APIC_DIV_TIMER 0xFA
-
-void gdt_init(void);
-void load_idt(void);
-
-extern uintptr_t ap_entry;
-extern uintptr_t ap_callback;
-extern uintptr_t ap_stacks;
+#include <arch/x86_64/apic.h>
+#include <arch/x86_64/gdt.h>
+#include <arch/x86_64/idt.h>
 
 volatile uint32_t *lapic = NULL;
-volatile bool ap_ready = false;
 
 uint64_t lapic_ids[256];
 uint8_t numcores = 0;
@@ -56,7 +37,6 @@ void test_ap(uint64_t)
 	lapic[0x3c] = 0x1FF; // enable local APIC
 	timer_init();
 	asm volatile("sti");
-	ap_ready = true;
 	for (;;)
 		asm volatile("hlt");
 }
@@ -145,7 +125,6 @@ void relocate_ap_trampoline(void)
  */
 void start_ap(uint8_t id)
 {
-	ap_ready = false;
 	// send INIT IPI
 	lapic[APIC_ERROR] = 0;
 	lapic[APIC_ICR_HIGH] = (lapic_ids[id] << 24);
@@ -171,10 +150,6 @@ void start_ap(uint8_t id)
 			__asm__ __volatile__("pause" : : : "memory");
 		} while (lapic[APIC_ICR_LOW] & (1 << 12));
 	}
-	// wait for AP to signal readiness
-	do {
-		__asm__ __volatile__("pause" : : : "memory");
-	} while (!ap_ready);
 }
 
 /**

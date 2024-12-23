@@ -7,10 +7,10 @@
 
 #include <arch.h>
 
-void gdt_init(void);
-void idt_init(void);
-void get_pml4(void);
-void apic_init(BootInfo *boot_info);
+#include <arch/x86_64/apic.h>
+#include <arch/x86_64/gdt.h>
+#include <arch/x86_64/idt.h>
+#include <arch/x86_64/paging.h>
 
 /**
  * @brief Initializes the architecture-specific components.
