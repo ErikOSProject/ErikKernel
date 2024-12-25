@@ -108,8 +108,8 @@ void heap_merge_blocks(heap_block *first, heap_block *second)
  */
 bool expand_heap(void)
 {
-	uintptr_t page = find_free_frames(1);
-	if (!page)
+	intptr_t page = find_free_frames(1);
+	if (page == -1)
 		return false;
 
 	set_frame_lock(page, 1, true);
@@ -144,8 +144,8 @@ void heap_init(BootInfo *boot_info)
 	if (!heap_start)
 		return;
 
-	uintptr_t first_page = find_free_frames(1);
-	if (!first_page)
+	intptr_t first_page = find_free_frames(1);
+	if (first_page == -1)
 		return;
 
 	set_frame_lock(first_page, 1, true);

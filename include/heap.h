@@ -8,6 +8,11 @@
 #ifndef _HEAP_H
 #define _HEAP_H
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <erikboot.h>
+
 typedef struct _heap_block heap_block;
 struct _heap_block {
 	bool used;

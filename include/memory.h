@@ -8,6 +8,11 @@
 #ifndef _MEMORY_H
 #define _MEMORY_H
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <erikboot.h>
+
 #define PAGE_SIZE 4096
 
 typedef struct {

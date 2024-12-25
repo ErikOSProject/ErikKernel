@@ -58,8 +58,8 @@ uint64_t paging_flags_to_arch(uint64_t flags)
  */
 uint64_t *paging_create_table(void)
 {
-	uintptr_t table = find_free_frames(1);
-	if (!table)
+	intptr_t table = find_free_frames(1);
+	if (table == -1)
 		return NULL;
 	set_frame_lock(table, 1, true);
 	memset((char *)table, 0, PAGE_SIZE);
