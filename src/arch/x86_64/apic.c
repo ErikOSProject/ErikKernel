@@ -8,11 +8,14 @@
 
 #include <acpi.h>
 #include <arch.h>
+#include <heap.h>
 #include <memory.h>
 
 #include <arch/x86_64/apic.h>
 #include <arch/x86_64/gdt.h>
 #include <arch/x86_64/idt.h>
+#include <arch/x86_64/msr.h>
+#include <arch/x86_64/syscall.h>
 
 volatile uint32_t *lapic = NULL;
 
@@ -22,6 +25,23 @@ uint8_t numcores = 0;
 IOAPIC ioapics[256];
 uint8_t numioapics = 0;
 
+thread_info *core_bases;
+
+/**
+ * @brief Set GS for the current core.
+ *
+ * This function sets the GS register to the base address of the current core's
+ * thread information structure.
+ *
+ * @param id The ID of the core.
+ */
+void set_core_base(uint64_t id)
+{
+	write_msr(MSR_GS_BASE, (uint64_t)&core_bases[id]);
+	write_msr(MSR_KERNEL_GS_BASE, (uint64_t)&core_bases[id]);
+	asm volatile("swapgs");
+}
+
 /**
  * @brief AP entry point.
  *
@@ -30,10 +50,11 @@ uint8_t numioapics = 0;
  *
  * @param id The ID of the AP.
  */
-void test_ap(uint64_t)
+void test_ap(uint64_t id)
 {
-	gdt_init();
+	load_gdt(id);
 	load_idt();
+	set_core_base(id);
 	lapic[0x3c] = 0x1FF; // enable local APIC
 	timer_init();
 	asm volatile("sti");
@@ -66,12 +87,14 @@ void apic_init(BootInfo *boot_info)
 			lapic_ids[numcores++] = madt_entry[2];
 		// IO APIC
 		else if (madt_entry[0] == 1) {
-			uint32_t *ioapic = *(uint32_t **)((uintptr_t)madt_entry + 4);
+			uint32_t *ioapic =
+				*(uint32_t **)((uintptr_t)madt_entry + 4);
 			ioapics[numioapics].address = ioapic;
 			ioapics[numioapics].base =
 				*(uint32_t *)((uintptr_t)madt_entry + 8);
 			ioapic[0] = 1;
-			ioapics[numioapics].length = 1 + (ioapic[4] >> 16) & 0xFF;
+			ioapics[numioapics].length = 1 + (ioapic[4] >> 16) &
+						     0xFF;
 			numioapics++;
 		}
 		madt_entry += madt_entry[1];
@@ -101,9 +124,14 @@ uint32_t get_bsp_id(void)
  */
 void allocate_ap_stacks(void)
 {
-	uintptr_t page = find_free_frames((numcores - 1) * 8);
-	set_frame_lock(page, (numcores - 1) * 8, true);
-	ap_stacks = page + (numcores - 1) * 0x800 - 1;
+	core_bases = (thread_info *)malloc(sizeof(thread_info) * numcores);
+	uintptr_t page = find_free_frames(numcores * 8);
+	set_frame_lock(page, numcores * 8, true);
+	ap_stacks = page + numcores * 0x800 - 1;
+	for (size_t i = 0; i < numcores; i++) {
+		core_bases[i].kernel_stack = page + i * 0x800 + 0x7ff;
+		_gdt[i].tss.rsp[0] = page + i * 0x800 + 0x7ff;
+	}
 }
 
 /**
@@ -171,6 +199,7 @@ void smp_init(BootInfo *)
 		if (lapic_ids[i] != bspid)
 			start_ap(i);
 
+	set_core_base(0);
 	timer_init();
 }
 
@@ -183,8 +212,8 @@ void smp_init(BootInfo *)
  */
 void timer_init(void)
 {
-	lapic[APIC_DIV_TIMER] = 3; 		// divide by 16
-	lapic[APIC_LVT_TIMER] = 0x20030;  // periodic mode, vector 0x30
+	lapic[APIC_DIV_TIMER] = 3; // divide by 16
+	lapic[APIC_LVT_TIMER] = 0x20030; // periodic mode, vector 0x30
 	lapic[APIC_TIMER_INITCNT] = 1000000;
 }
 

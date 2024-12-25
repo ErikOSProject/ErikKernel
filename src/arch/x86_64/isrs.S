@@ -43,13 +43,19 @@
 .endm
 
 _isr_handler:
-    cld
+    cmpq $8, 24(%rsp)
+    je 1f
+    swapgs
+1:  cld
     pusha64
     movq %rsp, %rdi
     call isr_handler
     movq %rax, %rsp
     popa64
-    addq $16, %rsp
+    cmpq $8, 24(%rsp)
+    je 1f
+    swapgs
+1:  addq $16, %rsp
     iretq
 
 .macro isr_err_stub no

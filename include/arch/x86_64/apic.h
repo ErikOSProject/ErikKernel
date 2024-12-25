@@ -25,10 +25,13 @@ typedef struct {
 #define APIC_TIMER_INITCNT 0xE0
 #define APIC_DIV_TIMER 0xFA
 
+extern uint8_t numcores;
+
 extern uintptr_t ap_entry;
 extern uintptr_t ap_callback;
 extern uintptr_t ap_stacks;
 
+void set_core_base(uint64_t id);
 void apic_init(BootInfo *boot_info);
 void timer_tick(void);
 

@@ -12,6 +12,8 @@
 #include <memory.h>
 #include <paging.h>
 
+void enter_user(void);
+
 /**
  * @brief Entry point for the kernel.
  * 
@@ -26,12 +28,14 @@
 	DEBUG_INIT();
 	DEBUG_PRINTF("Hello world from ErikKernel!\n\n");
 
-	arch_init(&boot_info);
+	arch_preinit(&boot_info);
 	page_frame_allocator_init(&boot_info);
 	heap_init(&boot_info);
 	fs_init(&boot_info);
+	arch_init(&boot_info);
 	smp_init(&boot_info);
 	DEBUG_PRINTF("OK!\n");
+	enter_user();
 	for (;;)
 		asm volatile("hlt");
 }

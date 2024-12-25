@@ -67,8 +67,9 @@ char *register_names[] = {
 	uint64_t cr2;
 	asm volatile("movq %%cr2, %0" : "=r"(cr2));
 	DEBUG_PRINTF("=== PANIC! ===\n"
-		     " - Unhandled %s @ %#016lX!\n",
-		     exception_names[frame->isr_number], frame->rip);
+		     " - Unhandled %s (%d) @ %#016lX!\n",
+		     exception_names[frame->isr_number], frame->error_code,
+		     frame->rip);
 	for (int i = 0; i < 15; ++i)
 		DEBUG_PRINTF("%3s : %016lX\n", register_names[i],
 			     ((uint64_t *)frame)[14 - i]);
