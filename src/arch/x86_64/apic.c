@@ -130,7 +130,7 @@ void allocate_ap_stacks(void)
 	ap_stacks = page + numcores * 0x800 - 1;
 	for (size_t i = 0; i < numcores; i++) {
 		core_bases[i].kernel_stack = page + i * 0x800 + 0x7ff;
-		_gdt[i].tss.rsp[0] = page + i * 0x800 + 0x7ff;
+		_gdt[i].tss.ist[0] = page + i * 0x800 + 0x7ff;
 	}
 }
 
