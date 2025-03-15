@@ -53,5 +53,5 @@ void syscall_init(void)
 	// Set syscall/sysret CS and SS selectors
 	write_msr(MSR_STAR, ((uint64_t)0x8 << 32) | ((uint64_t)0x18 << 48));
 	write_msr(MSR_LSTAR, (uint64_t)syscall_entry);
-	write_msr(MSR_SFMASK, 0);
+	write_msr(MSR_SFMASK, 0x700);
 }
