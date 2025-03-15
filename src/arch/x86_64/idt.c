@@ -70,6 +70,9 @@ char *register_names[] = {
 		     " - Unhandled %s (%d) @ %#016lX!\n",
 		     exception_names[frame->isr_number], frame->error_code,
 		     frame->rip);
+	DEBUG_PRINTF("RSP: %#016lX\n", frame->rsp);
+	DEBUG_PRINTF("RFLAGS: %#016lX\n", frame->rflags);
+	DEBUG_PRINTF("CS:SS: %#08lX:%#08lX\n", frame->cs, frame->ss);
 	for (int i = 0; i < 15; ++i)
 		DEBUG_PRINTF("%3s : %016lX\n", register_names[i],
 			     ((uint64_t *)frame)[14 - i]);
