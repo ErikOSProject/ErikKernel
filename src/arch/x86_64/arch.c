@@ -6,12 +6,12 @@
  */
 
 #include <arch.h>
+#include <syscall.h>
 
 #include <arch/x86_64/apic.h>
 #include <arch/x86_64/gdt.h>
 #include <arch/x86_64/idt.h>
 #include <arch/x86_64/paging.h>
-#include <arch/x86_64/syscall.h>
 
 /**
  * @brief Initializes the architecture-specific components required in early initialization.

@@ -45,6 +45,14 @@ typedef struct {
 	uint64_t MemorySize;
 } ELF_PROGRAM_HEADER;
 
+struct elf_image {
+	int refcount;
+	uint64_t entry;
+	uint16_t phsize;
+	uint16_t phnum;
+	ELF_PROGRAM_HEADER *phdr;
+};
+
 bool validate_elf(ELF_HEADER *hdr);
 bool load_elf(fs_node *node, struct process *proc);
 

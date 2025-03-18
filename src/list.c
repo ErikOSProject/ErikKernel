@@ -174,49 +174,55 @@ struct node *list_find(struct list *list, void *value)
 }
 
 /**
- * @brief Pops a node from the beginning of a linked list.
+ * @brief Removes and returns the first node from a linked list.
  *
- * This function pops a node from the beginning of a linked list.
+ * This function removes and returns the first node from a linked list.
  *
  * @param list A pointer to the linked list.
- * @return A pointer to the popped node.
+ * @return A pointer to the value of the first node, or NULL if the list is empty.
  */
-struct node *list_pop(struct list *list)
+void *list_shift(struct list *list)
 {
-	struct node *node = list->head;
-	if (node) {
+	if (list->head) {
+		struct node *node = list->head;
+		void *value = node->value;
 		list->head = node->next;
 		if (list->head) {
 			list->head->prev = NULL;
 		} else {
 			list->tail = NULL;
 		}
+		free(node);
 		list->length--;
+		return value;
 	}
-	return node;
+	return NULL;
 }
 
 /**
- * @brief Dequeues a node from the end of a linked list.
+ * @brief Removes and returns the last node from a linked list.
  *
- * This function dequeues a node from the end of a linked list.
+ * This function removes and returns the last node from a linked list.
  *
  * @param list A pointer to the linked list.
- * @return A pointer to the dequeued node.
+ * @return A pointer to the value of the last node, or NULL if the list is empty.
  */
-struct node *list_dequeue(struct list *list)
+void *list_pop(struct list *list)
 {
-	struct node *node = list->tail;
-	if (node) {
+	if (list->tail) {
+		struct node *node = list->tail;
+		void *value = node->value;
 		list->tail = node->prev;
 		if (list->tail) {
 			list->tail->next = NULL;
 		} else {
 			list->head = NULL;
 		}
+		free(node);
 		list->length--;
+		return value;
 	}
-	return node;
+	return NULL;
 }
 
 /**

@@ -11,12 +11,12 @@
 #include <heap.h>
 #include <memory.h>
 #include <paging.h>
+#include <syscall.h>
 
 #include <arch/x86_64/apic.h>
 #include <arch/x86_64/gdt.h>
 #include <arch/x86_64/idt.h>
 #include <arch/x86_64/msr.h>
-#include <arch/x86_64/syscall.h>
 
 #define LAPIC ((uint32_t *)0xFFFFFFFFFFFFF000)
 

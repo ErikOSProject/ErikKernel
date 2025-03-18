@@ -68,8 +68,12 @@ bool load_elf(fs_node *node, struct process *proc)
 			ret = true;
 	}
 
-	proc->entry = hdr.Entry;
-	free(phdrs);
+	proc->image = malloc(sizeof(struct elf_image));
+	proc->image->refcount = 1;
+	proc->image->entry = hdr.Entry;
+	proc->image->phsize = hdr.PHeaderEntrySize;
+	proc->image->phnum = hdr.PHeaderEntryCount;
+	proc->image->phdr = phdrs;
 
 	return ret;
 }

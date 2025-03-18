@@ -17,6 +17,7 @@ syscall_entry:
     push %r13
     push %r14
     push %r15
+    movq %rax, %rcx
     call syscall_handler
     pop %r15
     pop %r14
@@ -35,3 +36,8 @@ syscall_entry:
     movq %gs:0x10, %rsp // restore user stack pointer
     swapgs
     sysretq
+
+.global task_idle
+task_idle:
+    hlt
+    jmp task_idle
