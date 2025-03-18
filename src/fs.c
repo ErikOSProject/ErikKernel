@@ -296,7 +296,7 @@ static int ramfs_read(void *data, char *out, size_t cursor, size_t n)
 		return -1;
 
 	memcpy(out, file->data + cursor, n);
-	return 0;
+	return n;
 }
 
 /**
