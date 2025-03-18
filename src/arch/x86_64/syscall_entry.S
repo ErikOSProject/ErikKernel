@@ -35,8 +35,3 @@ syscall_entry:
     movq %gs:0x10, %rsp // restore user stack pointer
     swapgs
     sysretq
-
-.global user_test
-user_test:
-    syscall
-1:  jmp 1b

@@ -7,11 +7,10 @@
  */
 
 #include <debug.h>
+#include <task.h>
 
 #include <arch/x86_64/msr.h>
 #include <arch/x86_64/syscall.h>
-
-void user_test(void);
 
 /**
  * @brief System call entry point.
@@ -19,22 +18,9 @@ void user_test(void);
  * This function is the C entry point for system calls. It is called by the assembly
  * stub that is invoked by the SYSCALL instruction.
  */
-void syscall_handler(void)
+void syscall_handler(char c)
 {
-	DEBUG_PRINTF("System call!\n");
-}
-
-/**
- * @brief Enter user space.
- *
- * This function is used to enter user space. It is called by the kernel_main function
- * after initializing the system.
- */
-void enter_user(void)
-{
-	asm volatile(
-		"movq %0, %%rcx; movq $0x202, %%r11; sysretq" ::"i"(&user_test)
-		: "rcx", "r11");
+	DEBUG_PRINTF("%c", c);
 }
 
 /**

@@ -9,10 +9,13 @@
 #ifndef _ARCH_SYSCALL_H
 #define _ARCH_SYSCALL_H
 
+#include <task.h>
+
 typedef struct {
 	uint64_t cpuid;
 	uint64_t kernel_stack;
 	uint64_t user_stack;
+	struct process *proc;
 } __attribute__((packed)) thread_info;
 
 void syscall_init(void);

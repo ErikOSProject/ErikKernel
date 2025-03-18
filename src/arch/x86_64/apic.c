@@ -228,4 +228,5 @@ void timer_init(void)
 void timer_tick(struct interrupt_frame *frame)
 {
 	LAPIC[APIC_EOI] = 0;
+	task_switch(frame);
 }

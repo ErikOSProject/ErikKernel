@@ -11,8 +11,7 @@
 #include <heap.h>
 #include <memory.h>
 #include <paging.h>
-
-void enter_user(void);
+#include <task.h>
 
 /**
  * @brief Entry point for the kernel.
@@ -34,8 +33,9 @@ void enter_user(void);
 	fs_init(&boot_info);
 	arch_init(&boot_info);
 	smp_init(&boot_info);
-	DEBUG_PRINTF("OK!\n");
-	enter_user();
+	task_init();
+	task_enable_scheduler(true);
 	for (;;)
-		asm volatile("hlt");
+		;
+	// The scheduler will take over from here and never return to this point
 }

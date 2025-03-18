@@ -21,6 +21,7 @@ set(ARCH_SOURCES
     src/arch/x86_64/isrs.S
     src/arch/x86_64/paging.c
     src/arch/x86_64/syscall.c
-    src/arch/x86_64/syscall_entry.S)
+    src/arch/x86_64/syscall_entry.S
+    src/arch/x86_64/task.c)
 
 option(X64_UART "Support for UART on x86_64" CACHE)
