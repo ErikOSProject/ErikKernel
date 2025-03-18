@@ -29,6 +29,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${CMAKE_SOURCE_DIR}/src
 
 add_executable(KERNEL.ERIK
     src/acpi.c
+    src/elf.c
     src/fs.c
     src/heap.c
     src/list.c
