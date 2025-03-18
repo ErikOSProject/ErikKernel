@@ -50,7 +50,6 @@ _isr_handler:
     pusha64
     movq %rsp, %rdi
     call isr_handler
-    movq %rax, %rsp
     popa64
     cmpq $8, 24(%rsp)
     je 1f

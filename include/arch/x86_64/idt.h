@@ -24,7 +24,7 @@ typedef struct {
 	uint64_t base;
 } __attribute__((packed)) idtr;
 
-typedef struct {
+struct interrupt_frame {
 	uint64_t r15;
 	uint64_t r14;
 	uint64_t r13;
@@ -49,7 +49,7 @@ typedef struct {
 	uint64_t rflags;
 	uint64_t rsp;
 	uint64_t ss;
-} interrupt_frame;
+};
 
 extern void *isr_stub_table[];
 

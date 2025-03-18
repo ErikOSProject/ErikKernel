@@ -62,7 +62,7 @@ char *register_names[] = {
  * @param frame A pointer to the interrupt frame containing the state
  *              of the CPU registers at the time of the panic.
  */
-[[noreturn]] void panic_handler(interrupt_frame *frame)
+[[noreturn]] void panic_handler(struct interrupt_frame *frame)
 {
 	uint64_t cr2;
 	asm volatile("movq %%cr2, %0" : "=r"(cr2));
@@ -91,15 +91,13 @@ char *register_names[] = {
  * @param frame A pointer to the interrupt frame containing the state
  *              of the CPU registers at the time of the interrupt.
  */
-interrupt_frame *isr_handler(interrupt_frame *frame)
+void isr_handler(struct interrupt_frame *frame)
 {
 	if (frame->isr_number < 32)
 		panic_handler(frame);
 
 	else if (frame->isr_number == 48)
 		timer_tick();
-
-	return frame;
 }
 
 /**
