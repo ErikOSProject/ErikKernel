@@ -31,6 +31,7 @@ add_executable(KERNEL.ERIK
     src/acpi.c
     src/fs.c
     src/heap.c
+    src/list.c
     src/main.c
     src/memory.c
     src/serial.c
