@@ -69,12 +69,12 @@ uint64_t *paging_create_table(void)
 /**
  * @brief Maps a virtual address to a physical address in the page tables.
  *
- * @param tables A pointer to the top-level page table.
+ * @param pml4 A pointer to the top-level page table.
  * @param vaddr The virtual address to be mapped.
  * @param paddr The physical address to map to the virtual address.
  * @param flags The paging flags to be set for the mapping.
  */
-void paging_map_page(uint64_t *tables, uintptr_t vaddr, uintptr_t paddr,
+void paging_map_page(uint64_t *pml4, uintptr_t vaddr, uintptr_t paddr,
 		     uint64_t flags)
 {
 	uint64_t pml4_index = PML4_INDEX(vaddr);
@@ -82,10 +82,10 @@ void paging_map_page(uint64_t *tables, uintptr_t vaddr, uintptr_t paddr,
 	uint64_t pd_index = PD_INDEX(vaddr);
 	uint64_t pt_index = PT_INDEX(vaddr);
 
-	uint64_t *pdpt = (uint64_t *)(tables[pml4_index] & ~0xFFF);
-	if (!pdpt || !(tables[pml4_index] & P_X64_PRESENT)) {
+	uint64_t *pdpt = (uint64_t *)(pml4[pml4_index] & ~0xFFF);
+	if (!pdpt || !(pml4[pml4_index] & P_X64_PRESENT)) {
 		pdpt = paging_create_table();
-		tables[pml4_index] = (uint64_t)pdpt | TABLE_DEFAULT;
+		pml4[pml4_index] = (uint64_t)pdpt | TABLE_DEFAULT;
 	}
 
 	uint64_t *pd = (uint64_t *)(pdpt[pdpt_index] & ~0xFFF);
@@ -109,19 +109,19 @@ void paging_map_page(uint64_t *tables, uintptr_t vaddr, uintptr_t paddr,
  *
  * This function removes the mapping of a virtual address from the page tables.
  *
- * @param tables A pointer to the top-level page table.
+ * @param pml4 A pointer to the top-level page table.
  * @param vaddr The virtual address to unmap.
  */
-void paging_unmap_page(uint64_t *tables, uintptr_t vaddr)
+void paging_unmap_page(uint64_t *pml4, uintptr_t vaddr)
 {
 	uint64_t pml4_index = PML4_INDEX(vaddr);
 	uint64_t pdpt_index = PDPT_INDEX(vaddr);
 	uint64_t pd_index = PD_INDEX(vaddr);
 	uint64_t pt_index = PT_INDEX(vaddr);
 
-	if (!(tables[pml4_index] & P_X64_PRESENT))
+	if (!(pml4[pml4_index] & P_X64_PRESENT))
 		return;
-	uint64_t *pdpt = (uint64_t *)(tables[pml4_index] & ~0xFFF);
+	uint64_t *pdpt = (uint64_t *)(pml4[pml4_index] & ~0xFFF);
 	if (!pdpt)
 		return;
 
@@ -142,4 +142,23 @@ void paging_unmap_page(uint64_t *tables, uintptr_t vaddr)
 	pt[pt_index] = 0;
 
 	asm volatile("invlpg (%0)" ::"r"(vaddr) : "memory");
+}
+
+void paging_clone_higher_half(uint64_t *src, uint64_t *dst)
+{
+	uint64_t *dst_pdpt = paging_create_table();
+	dst[0x1ff] = (uint64_t)dst_pdpt | TABLE_DEFAULT;
+	uint64_t *dst_pd = paging_create_table();
+	dst_pdpt[0x1ff] = (uint64_t)dst_pd | TABLE_DEFAULT;
+
+	uint64_t *src_pdpt = (uint64_t *)(src[0x1ff] & ~0xFFF);
+	uint64_t *src_pd = (uint64_t *)(src_pdpt[0x1ff] & ~0xFFF);
+
+	for (int i = 448; i < 512; i++)
+		dst_pd[i] = src_pd[i];
+}
+
+void paging_set_current(uint64_t *pml4)
+{
+	asm volatile("movq %0, %%cr3" ::"r"(pml4) : "memory");
 }

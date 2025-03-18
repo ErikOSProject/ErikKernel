@@ -21,5 +21,8 @@ extern uint64_t *tables;
 void paging_map_page(uint64_t *tables, uintptr_t vaddr, uintptr_t paddr,
 		     uint64_t flags);
 void paging_unmap_page(uint64_t *tables, uintptr_t vaddr);
+uint64_t *paging_create_table(void);
+void paging_clone_higher_half(uint64_t *src, uint64_t *dst);
+void paging_set_current(uint64_t *tables);
 
 #endif //_PAGING_H
