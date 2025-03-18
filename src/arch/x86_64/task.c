@@ -28,6 +28,15 @@ struct interrupt_frame idle_frame = {
 	.rflags = 0x202,
 };
 
+/**
+ * @brief Creates a new address space for a process.
+ *
+ * This function creates a new address space for a process by creating a new
+ * Page Map Level 4 (PML4) table and cloning the higher half of the kernel's
+ * page tables into it.
+ *
+ * @param proc A pointer to the process structure.
+ */
 void task_new_address_space(struct process *proc)
 {
 	uintptr_t pml4 = (uintptr_t)paging_create_table();
@@ -38,6 +47,14 @@ void task_new_address_space(struct process *proc)
 	proc->tables = (uint64_t *)pml4;
 }
 
+/**
+ * @brief Allocates a stack for a thread.
+ *
+ * This function allocates a stack for a thread by finding a free region of
+ * physical memory and mapping it into the thread's address space.
+ *
+ * @param t A pointer to the thread structure.
+ */
 void task_alloc_stack(struct thread *t)
 {
 	intptr_t vstack = 0xfffffffff8000000 - TASK_DEFAULT_STACK_SIZE * t->id;
@@ -54,6 +71,12 @@ void task_alloc_stack(struct thread *t)
 	t->stack = vstack;
 }
 
+/**
+ * @brief Initializes the task scheduler.
+ *
+ * This function initializes the task scheduler by creating the process list
+ * and the task queue, and creating the initial process and thread.
+ */
 void task_init(void)
 {
 	spinlock_init(&task_lock);
@@ -80,6 +103,14 @@ void task_init(void)
 	spinlock_release(&task_lock);
 }
 
+/**
+ * @brief Switches to the next task in the task queue.
+ *
+ * This function switches to the next task in the task queue by saving the
+ * current task's context and restoring the next task's context.
+ *
+ * @param frame A pointer to the interrupt frame.
+ */
 void task_switch(struct interrupt_frame *frame)
 {
 	if (!scheduler_enabled)
@@ -117,12 +148,27 @@ void task_switch(struct interrupt_frame *frame)
 	spinlock_release(&task_lock);
 }
 
+/**
+ * @brief Marks the current task as exiting.
+ */
 void task_exit(void)
 {
 	thread_info *info = (thread_info *)read_msr(MSR_GS_BASE);
 	info->thread->exiting = true;
 }
 
+/**
+ * @brief Creates a new thread for a process.
+ *
+ * This function creates a new thread for a process by allocating a new thread
+ * structure, allocating a stack for the thread, and initializing the thread's
+ * context.
+ *
+ * @param proc A pointer to the process structure.
+ * @param entry The entry point for the thread.
+ *
+ * @return A pointer to the new thread structure.
+ */
 struct thread *task_new_thread(struct process *proc, void *entry)
 {
 	struct thread *thread = malloc(sizeof(struct thread));
@@ -146,6 +192,15 @@ struct thread *task_new_thread(struct process *proc, void *entry)
 	return thread;
 }
 
+/**
+ * @brief Deletes a thread.
+ *
+ * This function deletes a thread by removing it from the task queue and the
+ * process's thread list, unlocking the thread's stack, and freeing the thread's
+ * context and structure.
+ *
+ * @param thread A pointer to the thread structure.
+ */
 void task_delete_thread(struct thread *thread)
 {
 	struct node *n = list_find(task_queue, thread);
@@ -160,6 +215,14 @@ void task_delete_thread(struct thread *thread)
 	free(thread);
 }
 
+/**
+ * @brief Deletes a process.
+ *
+ * This function deletes a process by removing it from the process list and
+ * deleting all of its threads and child processes.
+ *
+ * @param proc A pointer to the process structure.
+ */
 void task_delete_process(struct process *proc)
 {
 	struct node *n = list_find(processes, proc);
@@ -182,6 +245,15 @@ void task_delete_process(struct process *proc)
 	free(proc);
 }
 
+/**
+ * @brief Finds a process based on the process ID.
+ *
+ * This function finds a process based on the process ID.
+ *
+ * @param pid The process ID.
+ *
+ * @return A pointer to the process structure, or NULL if the process was not found.
+ */
 struct process *task_find_process(int pid)
 {
 	for (struct node *n = processes->head; n; n = n->next) {

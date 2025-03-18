@@ -55,6 +55,15 @@ static struct syscall_id_name syscall_stdio_methods[] = {
 
 struct list *syscall_services = NULL;
 
+/**
+ * @brief Finds a service based on the service name.
+ *
+ * This function finds a service based on the service name.
+ *
+ * @param params A pointer to the system call parameter list.
+ *
+ * @return The service ID on success, a negative error code on failure.
+ */
 static int64_t syscall_find_service(struct list *params)
 {
 	struct syscall_param *name_param =
@@ -76,6 +85,14 @@ static int64_t syscall_find_service(struct list *params)
 	return -1;
 }
 
+/**
+ * @brief Finds a system call id for a given name.
+ *
+ * @param params A pointer to the system call parameter list.
+ * @param table A pointer to the system call id table.
+ *
+ * @return The id on success, a negative error code on failure.
+ */
 static int64_t syscall_find_id(struct list *params,
 			       struct syscall_id_name *table)
 {
@@ -95,7 +112,14 @@ static int64_t syscall_find_id(struct list *params,
 	return -1;
 }
 
-int64_t syscall_find_method(struct list *params)
+/**
+ * @brief Finds a method based on the interface identifier and method name.
+ *
+ * @param params A pointer to the system call parameter list.
+ *
+ * @return The method identifier on success, a negative error code on failure.
+ */
+static int64_t syscall_find_method(struct list *params)
 {
 	struct syscall_param *interface_param =
 		(struct syscall_param *)list_shift(params);
@@ -118,6 +142,15 @@ int64_t syscall_find_method(struct list *params)
 	}
 }
 
+/**
+ * @brief Writes a string to the standard output.
+ *
+ * This function writes a string to the standard output.
+ *
+ * @param params A pointer to the system call parameter list.
+ *
+ * @return Zero on success, a negative error code on failure.
+ */
 static int64_t syscall_stdio_write(struct list *params)
 {
 	struct syscall_param *str_param =
@@ -132,6 +165,15 @@ static int64_t syscall_stdio_write(struct list *params)
 	return 0;
 }
 
+/**
+ * @brief Registers a service with the global name service.
+ *
+ * This function registers a service with the global name service.
+ *
+ * @param params A pointer to the system call parameter list.
+ *
+ * @return The ID of the registered service on success, a negative error code on failure.
+ */
 static int64_t syscall_register_service(struct list *params)
 {
 	thread_info *info = (thread_info *)read_msr(MSR_GS_BASE);
@@ -175,6 +217,15 @@ static int64_t syscall_register_service(struct list *params)
 	return service->id;
 }
 
+/**
+ * @brief Unregisters a service from the global name service.
+ *
+ * This function unregisters a service from the global name service.
+ *
+ * @param params A pointer to the system call parameter list.
+ *
+ * @return Zero on success, a negative error code on failure.
+ */
 static int64_t syscall_unregister_service(struct list *params)
 {
 	struct syscall_param *name_param =
@@ -199,6 +250,18 @@ static int64_t syscall_unregister_service(struct list *params)
 	return -1;
 }
 
+/**
+ * @brief Kernel system call method handler.
+ *
+ * This function is responsible for handling system calls to the kernel. It dispatches the
+ * system call to the appropriate handler based on the interface and method identifiers.
+ *
+ * @param interface The interface identifier.
+ * @param method The method identifier.
+ * @param params A pointer to the system call parameter list.
+ *
+ * @return The return value of the system call method.
+ */
 static int64_t syscall_kernel_method(uint64_t interface, uint64_t method,
 				     struct list *params)
 {
@@ -237,6 +300,14 @@ static int64_t syscall_kernel_method(uint64_t interface, uint64_t method,
 	}
 }
 
+/**
+ * @brief Copy system call parameters.
+ *
+ * This function copies system call parameters from the source list to the destination list.
+ *
+ * @param src A pointer to the source list.
+ * @param dst A pointer to the destination list.
+ */
 static void syscall_copy_params(struct list *src, struct list *dst)
 {
 	while (src->length) {
@@ -256,6 +327,17 @@ static void syscall_copy_params(struct list *src, struct list *dst)
 	}
 }
 
+/**
+ * @brief Copy a parameter from the system call parameter list.
+ *
+ * This function copies a parameter from the system call parameter list to the destination
+ * parameter structure.
+ *
+ * @param src A pointer to the source parameter structure.
+ * @param dst A pointer to the destination parameter structure.
+ *
+ * @return Zero on success, a negative error code on failure.
+ */
 static int64_t syscall_copy_param(struct syscall_param *src,
 				  struct syscall_param *dst)
 {
@@ -269,6 +351,17 @@ static int64_t syscall_copy_param(struct syscall_param *src,
 	return 0;
 }
 
+/**
+ * @brief Peek a parameter from the system call parameter list.
+ *
+ * This function peeks a parameter from the system call parameter list and copies it to the
+ * destination parameter structure.
+ *
+ * @param params A pointer to the system call parameter list.
+ * @param data A pointer to the destination parameter structure.
+ *
+ * @return Zero on success, a negative error code on failure.
+ */
 static int64_t syscall_param_peek(struct list *params, void *data)
 {
 	struct syscall_param *dst = (struct syscall_param *)data;
@@ -278,6 +371,17 @@ static int64_t syscall_param_peek(struct list *params, void *data)
 	return syscall_copy_param(src, dst);
 }
 
+/**
+ * @brief Pop a parameter from the system call parameter list.
+ *
+ * This function pops a parameter from the system call parameter list and copies it to the
+ * destination parameter structure.
+ *
+ * @param params A pointer to the system call parameter list.
+ * @param data A pointer to the destination parameter structure.
+ *
+ * @return Zero on success, a negative error code on failure.
+ */
 static int64_t syscall_param_pop(struct list *params, void *data)
 {
 	struct syscall_param *dst = (struct syscall_param *)data;
@@ -287,6 +391,17 @@ static int64_t syscall_param_pop(struct list *params, void *data)
 	return syscall_copy_param(src, dst);
 }
 
+/**
+ * @brief System call method handler.
+ *
+ * This function is responsible for handling system call methods. It dispatches the
+ * system call to the appropriate handler based on the interface and method identifiers.
+ *
+ * @param data A pointer to the system call method data structure.
+ * @param info A pointer to the thread information structure.
+ *
+ * @return The return value of the system call method.
+ */
 static int64_t syscall_method(struct syscall_method_data *data,
 			      thread_info *info)
 {

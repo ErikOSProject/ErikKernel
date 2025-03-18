@@ -144,6 +144,14 @@ void paging_unmap_page(uint64_t *pml4, uintptr_t vaddr)
 	asm volatile("invlpg (%0)" ::"r"(vaddr) : "memory");
 }
 
+/**
+ * @brief Clones the higher half of the page tables.
+ *
+ * This function clones the higher half of the page tables to the lower half.
+ *
+ * @param src A pointer to the source page table.
+ * @param dst A pointer to the destination page table.
+ */
 void paging_clone_higher_half(uint64_t *src, uint64_t *dst)
 {
 	uint64_t *dst_pdpt = paging_create_table();
@@ -158,6 +166,13 @@ void paging_clone_higher_half(uint64_t *src, uint64_t *dst)
 		dst_pd[i] = src_pd[i];
 }
 
+/**
+ * @brief Sets the current page table.
+ *
+ * This function sets the current page table for the system.
+ *
+ * @param pml4 A pointer to the page table to set as the current table.
+ */
 void paging_set_current(uint64_t *pml4)
 {
 	asm volatile("movq %0, %%cr3" ::"r"(pml4) : "memory");

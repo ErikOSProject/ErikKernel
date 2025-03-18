@@ -4,6 +4,14 @@
 #include <memory.h>
 #include <paging.h>
 
+/**
+ * @brief Validates an ELF header.
+ *
+ * This function validates an ELF header to ensure that it is a valid ELF file.
+ *
+ * @param hdr A pointer to the ELF header structure.
+ * @return true if the ELF header is valid, false otherwise.
+ */
 bool validate_elf(ELF_HEADER *hdr)
 {
 	uint8_t magic[4] = ELF_MAGIC;
@@ -20,6 +28,16 @@ bool validate_elf(ELF_HEADER *hdr)
 	return true;
 }
 
+/**
+ * @brief Loads an ELF file into memory.
+ *
+ * This function loads an ELF file into memory by mapping the program headers
+ * into the process's address space and copying the program data into memory.
+ *
+ * @param node A pointer to the filesystem node containing the ELF file.
+ * @param proc A pointer to the process structure.
+ * @return true on success, false on failure.
+ */
 bool load_elf(fs_node *node, struct process *proc)
 {
 	ELF_HEADER hdr;
