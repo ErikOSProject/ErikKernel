@@ -47,9 +47,27 @@ struct fs_node {
 	size_t size;
 };
 
+typedef enum {
+	SEEK_SET,
+	SEEK_CUR,
+	SEEK_END,
+} fs_seek_mode;
+
 static inline int fs_read(fs_node *node, char *out, size_t n)
 {
 	return node->driver->read(node->data, out, node->cursor, n);
+}
+
+static inline size_t fs_seek(fs_node *node, size_t offset, fs_seek_mode mode)
+{
+	switch (mode) {
+	case SEEK_SET:
+		return node->cursor = offset;
+	case SEEK_CUR:
+		return node->cursor += offset;
+	case SEEK_END:
+		return node->cursor = node->size + offset;
+	}
 }
 
 fs_mount_point *fs_mount_point_for_path(const char *path, size_t *index);
