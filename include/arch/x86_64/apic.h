@@ -10,6 +10,7 @@
 #define _APIC_H
 
 #include <erikboot.h>
+#include <arch/x86_64/idt.h>
 
 typedef struct {
 	uint32_t *address;
@@ -33,6 +34,6 @@ extern uintptr_t ap_stacks;
 
 void set_core_base(uint64_t id);
 void apic_init(BootInfo *boot_info);
-void timer_tick(void);
+void timer_tick(struct interrupt_frame *frame);
 
 #endif //_APIC_H

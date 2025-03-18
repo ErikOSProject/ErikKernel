@@ -97,7 +97,7 @@ void isr_handler(struct interrupt_frame *frame)
 		panic_handler(frame);
 
 	else if (frame->isr_number == 48)
-		timer_tick();
+		timer_tick(frame);
 }
 
 /**
