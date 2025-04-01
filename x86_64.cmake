@@ -2,6 +2,7 @@ set(CMAKE_SYSTEM_NAME Generic)
 
 find_program(CLANG clang REQUIRED True)
 set(CMAKE_C_COMPILER clang)
+set(CMAKE_ASM_COMPILER clang)
 
 find_program(CLANGXX clang++ REQUIRED False)
 set(CMAKE_CXX_COMPILER ${CLANGXX})
