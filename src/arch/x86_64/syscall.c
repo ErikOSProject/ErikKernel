@@ -313,17 +313,7 @@ static void syscall_copy_params(struct list *src, struct list *dst)
 	while (src->length) {
 		struct syscall_param *param =
 			(struct syscall_param *)list_shift(src);
-		struct syscall_param *copy =
-			malloc(sizeof(struct syscall_param));
-		copy->type = param->type;
-		copy->size = param->size;
-		if (param->type == SYSCALL_PARAM_ARRAY) {
-			copy->array = malloc(param->size);
-			memcpy(copy->array, param->array, param->size);
-		} else {
-			copy->value = param->value;
-		}
-		list_insert_tail(dst, copy);
+		list_insert_tail(dst, param);
 	}
 }
 
@@ -344,10 +334,50 @@ static int64_t syscall_copy_param(struct syscall_param *src,
 	dst->type = src->type;
 	dst->size = src->size;
 	if (src->type == SYSCALL_PARAM_ARRAY) {
-		if (dst->array)
+		if (!dst->array)
+			return 0;
+		if ((uintptr_t)dst->array < 0xFFFFFFFFF8000000) {
 			memcpy(dst->array, src->array, src->size);
+		} else
+			return -1; // Do not allow copying to kernel space
 	} else
 		dst->value = src->value;
+	return 0;
+}
+
+/**
+ * @brief Push a parameter onto the system call parameter list.
+ * 
+ * This function pushes a parameter onto the system call parameter list.
+ * 
+ * @param params A pointer to the system call parameter list.
+ * @param data A pointer to the parameter structure to be pushed.
+ * 
+ * @return Zero on success, a negative error code on failure.
+ */
+static int64_t syscall_param_push(struct list *params, void *data)
+{
+	struct syscall_param *param = (struct syscall_param *)data;
+	if (!param)
+		return -1;
+	struct syscall_param *copy = malloc(sizeof(struct syscall_param));
+	if (!copy)
+		return -1;
+	copy->type = param->type;
+	copy->size = param->size;
+	if (param->type == SYSCALL_PARAM_ARRAY) {
+		if ((uintptr_t)param->array >= 0xFFFFFFFFF8000000)
+			return -1; // Do not allow copying from kernel space
+		copy->array = malloc(param->size);
+		if (!copy->array) {
+			free(copy);
+			return -1;
+		}
+		memcpy(copy->array, param->array, param->size);
+	} else {
+		copy->value = param->value;
+	}
+	list_insert_tail(params, copy);
 	return 0;
 }
 
@@ -451,8 +481,7 @@ void syscall_handler(struct interrupt_frame *frame)
 					    info);
 		break;
 	case SYSCALL_PUSH:
-		list_insert_tail(params, data);
-		frame->rax = 0;
+		frame->rax = syscall_param_push(params, data);
 		break;
 	case SYSCALL_PEEK:
 		frame->rax = syscall_param_peek(params, data);
