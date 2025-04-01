@@ -6,41 +6,7 @@
  * These routines act as wrappers around the C interrupt handlers.
  */
 
-.macro pusha64
-    push %rax
-    push %rbx
-    push %rcx
-    push %rdx
-    push %rbp
-    push %rdi
-    push %rsi
-    push %r8
-    push %r9
-    push %r10
-    push %r11
-    push %r12
-    push %r13
-    push %r14
-    push %r15
-.endm
-
-.macro popa64
-    pop %r15
-    pop %r14
-    pop %r13
-    pop %r12
-    pop %r11
-    pop %r10
-    pop %r9
-    pop %r8
-    pop %rsi
-    pop %rdi
-    pop %rbp
-    pop %rdx
-    pop %rcx
-    pop %rbx
-    pop %rax
-.endm
+#include "util.S"
 
 _isr_handler:
     cmpq $8, 24(%rsp)
@@ -56,19 +22,6 @@ _isr_handler:
     swapgs
 1:  addq $16, %rsp
     iretq
-
-.macro isr_err_stub no
-isr_stub_\no:
-    pushq $\no
-    jmp _isr_handler
-.endm
-
-.macro isr_no_err_stub no
-isr_stub_\no:
-    pushq $0
-    pushq $\no
-    jmp _isr_handler
-.endm
 
 isr_no_err_stub 0
 isr_no_err_stub 1
@@ -104,10 +57,6 @@ isr_err_stub    30
 isr_no_err_stub 31
 
 isr_no_err_stub 48
-
-.macro isr_name no
-.quad isr_stub_\no
-.endm
 
 .global isr_stub_table
 isr_stub_table:

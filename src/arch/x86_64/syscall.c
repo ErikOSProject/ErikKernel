@@ -432,26 +432,37 @@ static int64_t syscall_method(struct syscall_method_data *data,
  *
  * This function is the C entry point for system calls. It is called by the assembly
  * stub that is invoked by the SYSCALL instruction.
+ * 
+ * @param frame A pointer to the interrupt frame structure.
  */
-int64_t syscall_handler(enum syscall_type type, void *data)
+void syscall_handler(struct interrupt_frame *frame)
 {
+	enum syscall_type type = frame->rdi;
+	void *data = (void *)frame->rsi;
 	thread_info *info = (thread_info *)read_msr(MSR_GS_BASE);
 	struct list *params = info->thread->syscall_params;
 	switch (type) {
 	case SYSCALL_EXIT:
 		task_exit();
-		return 0;
+		task_switch(frame);
+		break;
 	case SYSCALL_METHOD:
-		return syscall_method((struct syscall_method_data *)data, info);
+		frame->rax = syscall_method((struct syscall_method_data *)data,
+					    info);
+		break;
 	case SYSCALL_PUSH:
 		list_insert_tail(params, data);
-		return 0;
+		frame->rax = 0;
+		break;
 	case SYSCALL_PEEK:
-		return syscall_param_peek(params, data);
+		frame->rax = syscall_param_peek(params, data);
+		break;
 	case SYSCALL_POP:
-		return syscall_param_pop(params, data);
+		frame->rax = syscall_param_pop(params, data);
+		break;
 	default:
-		return -1;
+		frame->rax = -1;
+		break;
 	}
 }
 

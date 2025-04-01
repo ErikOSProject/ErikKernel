@@ -1,3 +1,14 @@
+/**
+ * @file ap_entry.S
+ * @brief Assembly entry point for the AP (Application Processor) in long mode.
+ *
+ * This file contains the assembly code that sets up the AP to enter long mode in a
+ * multi-core environment. It includes the necessary steps to switch from real mode
+ * to protected mode, enable PAE (Physical Address Extension), and finally enter long
+ * mode. The code also sets up the GDT (Global Descriptor Table) and prepares the
+ * stack for the AP.
+ */
+
 .code16
 .section .text
 .global ap_entry
