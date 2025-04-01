@@ -70,10 +70,17 @@ bool load_elf(fs_node *node, struct process *proc)
 				break;
 			if (set_frame_lock(pages, memory_pages, true) < 0)
 				break;
-			paging_map_page(tables, phdr->VirtualStart,
-					pages * PAGE_SIZE, P_USER_WRITE);
-			paging_map_page(proc->tables, phdr->VirtualStart,
-					pages * PAGE_SIZE, P_USER_WRITE);
+
+			for (size_t j = 0; j < memory_pages; j++) {
+				paging_map_page(
+					tables,
+					phdr->VirtualStart + j * PAGE_SIZE,
+					(pages + j) * PAGE_SIZE, P_USER_WRITE);
+				paging_map_page(
+					proc->tables,
+					phdr->VirtualStart + j * PAGE_SIZE,
+					(pages + j) * PAGE_SIZE, P_USER_WRITE);
+			}
 
 			fs_seek(node, phdr->Offset, SEEK_SET);
 			if (fs_read(node, (char *)phdr->VirtualStart,
