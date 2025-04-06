@@ -62,3 +62,5 @@ endif()
 
 target_include_directories(KERNEL.ERIK PUBLIC 
     include)
+
+install(TARGETS KERNEL.ERIK)
