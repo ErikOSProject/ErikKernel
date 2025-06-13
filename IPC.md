@@ -21,6 +21,7 @@ The IPC system defines six core system calls:
 | `POP`       | Reads and removes the top argument from the stack.                               |
 | `METHOD`    | Calls a method in a target process, triggering a handler thread.                 |
 | `SIGNAL`    | Broadcasts a message to all listening processes.                                 |
+| `TARGETED_SIGNAL` | Sends a signal to a specific process.                     |
 | `EXIT`      | Terminates the current IPC handler thread (used after handling a METHOD/SIGNAL). |
 
 ### Stack Semantics
@@ -65,6 +66,19 @@ SIGNAL <IID> <SID>
 The kernel spawns a handler thread in every process that has registered an entry
 point. The interface and signal identifiers are passed to the handler through the
 `rdi` and `rsi` registers, respectively, and the caller's PID is provided in `rdx`.
+
+### TARGETED_SIGNAL Semantics
+
+`TARGETED_SIGNAL` delivers a signal to a single destination process identified
+by its PID while carrying the same IID/SID tuple as `SIGNAL`.
+
+```text
+TARGETED_SIGNAL <PID> <IID> <SID>
+```
+
+Only the specified process receives the signal. The handler arguments match
+`SIGNAL`: `rdi` holds the interface ID, `rsi` the signal ID, and `rdx` the
+sender's PID.
 
 ---
 
@@ -151,6 +165,7 @@ enum syscall_type {
     SYSCALL_EXIT,    // Terminates the current handler thread
     SYSCALL_METHOD,  // Invokes a method in a target process
     SYSCALL_SIGNAL,  // Broadcasts a message to all listeners
+    SYSCALL_TARGETED_SIGNAL, // Sends a signal to a single process
     SYSCALL_PUSH,    // Pushes an argument onto the IPC stack
     SYSCALL_PEEK,    // Peeks at the top argument of the IPC stack
     SYSCALL_POP,     // Pops (reads and removes) the top argument

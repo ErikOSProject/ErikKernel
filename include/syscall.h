@@ -15,6 +15,7 @@ enum syscall_type {
 	SYSCALL_EXIT,
 	SYSCALL_METHOD,
 	SYSCALL_SIGNAL,
+	SYSCALL_TARGETED_SIGNAL,
 	SYSCALL_PUSH,
 	SYSCALL_PEEK,
 	SYSCALL_POP,
@@ -64,6 +65,12 @@ struct syscall_method_data {
 };
 
 struct syscall_signal_data {
+	uint64_t interface;
+	uint64_t signal;
+};
+
+struct syscall_targeted_signal_data {
+	uint64_t pid;
 	uint64_t interface;
 	uint64_t signal;
 };

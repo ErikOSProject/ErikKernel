@@ -551,6 +551,44 @@ static int64_t syscall_signal(struct syscall_signal_data *data,
 }
 
 /**
+ * @brief Send a signal to a single process.
+ *
+ * This call behaves like @ref syscall_signal but only creates a handler thread
+ * in the specified target process.
+ */
+static int64_t
+syscall_targeted_signal(struct syscall_targeted_signal_data *data,
+			thread_info *info, struct interrupt_frame *frame)
+{
+	if (!data)
+		return -1;
+
+	struct process *proc = task_find_process(data->pid);
+	if (!proc || !proc->syscall_callback)
+		return -1;
+
+	struct list *params = info->thread->syscall_params;
+
+	paging_set_current(tables);
+	struct thread *t =
+		task_new_thread(proc, (void *)proc->syscall_callback, true);
+	paging_set_current(info->thread->proc->tables);
+
+	t->context->rdi = data->interface;
+	t->context->rsi = data->signal;
+	t->context->rdx = info->thread->proc->id;
+
+	syscall_clone_params(params, t->syscall_params);
+
+	while (list_find(proc->threads, t))
+		task_switch(frame);
+
+	syscall_destroy_params(t->syscall_params);
+
+	return 0;
+}
+
+/**
  * @brief System call entry point.
  *
  * This function is the C entry point for system calls. It is called by the assembly
@@ -576,6 +614,11 @@ void syscall_handler(struct interrupt_frame *frame)
 	case SYSCALL_SIGNAL:
 		frame->rax = syscall_signal((struct syscall_signal_data *)data,
 					    info, frame);
+		break;
+	case SYSCALL_TARGETED_SIGNAL:
+		frame->rax = syscall_targeted_signal(
+			(struct syscall_targeted_signal_data *)data, info,
+			frame);
 		break;
 	case SYSCALL_PUSH:
 		frame->rax = syscall_param_push(params, data);
