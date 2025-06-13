@@ -52,5 +52,6 @@ void task_delete_thread(struct thread *thread);
 void task_delete_process(struct process *proc);
 struct process *task_find_process(int pid);
 struct process *task_fork(struct thread *t);
+int task_exec(struct thread *t, const char *path);
 
 #endif //_TASK_H

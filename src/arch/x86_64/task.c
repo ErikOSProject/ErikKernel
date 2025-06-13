@@ -477,3 +477,77 @@ struct process *task_fork(struct thread *thread)
 	spinlock_release(&task_lock);
 	return child;
 }
+
+/**
+ * @brief Replaces the current thread's process image with a new executable.
+ *
+ * This function loads a new executable from the specified path into the address space
+ * of the process associated with the given thread. It performs the following steps:
+ *   - Validates the input thread and path.
+ *   - Finds the filesystem node for the executable.
+ *   - Acquires the task lock to ensure thread safety.
+ *   - Deletes all other threads in the process except the current one.
+ *   - Resets thread IDs and initializes syscall parameters.
+ *   - Allocates and sets up a new stack for the thread.
+ *   - Frees and creates a new address space for the process.
+ *   - Loads the ELF executable into the process address space.
+ *   - Initializes the thread's context to start execution at the new entry point.
+ *   - Sets the current paging tables to the new address space.
+ *   - Releases the task lock.
+ *
+ * @param thread Pointer to the thread whose process image will be replaced.
+ * @param path   Path to the executable file to load.
+ * @return 0 on success, -1 on failure.
+ */
+int task_exec(struct thread *thread, const char *path)
+{
+	if (!thread || !path)
+		return -1;
+
+	fs_node node;
+	if (fs_find_node(&node, path) < 0)
+		return -1;
+
+	spinlock_acquire(&task_lock);
+
+	struct process *proc = thread->proc;
+
+	struct node *n = proc->threads->head;
+	while (n) {
+		struct thread *t = (struct thread *)n->value;
+		n = n->next;
+		if (t != thread)
+			task_delete_thread(t);
+	}
+
+	proc->next_tid = 1;
+	thread->id = proc->next_tid++;
+
+	list_destroy(thread->syscall_params);
+	thread->syscall_params = list_create();
+
+	set_frame_lock(thread->stack, TASK_DEFAULT_STACK_PAGES, false);
+	task_alloc_stack(thread);
+
+	task_free_address_space(proc->tables);
+	task_new_address_space(proc);
+
+	if (!load_elf(&node, proc)) {
+		spinlock_release(&task_lock);
+		return -1;
+	}
+
+	free(thread->context);
+	thread->context = malloc(sizeof(struct interrupt_frame));
+	thread->context->rip = proc->image->entry;
+	thread->context->rsp = thread->stack + TASK_DEFAULT_STACK_SIZE;
+	thread->context->rbp = thread->context->rsp;
+	thread->context->cs = 0x2B;
+	thread->context->ss = 0x23;
+	thread->context->rflags = 0x202;
+
+	paging_set_current(proc->tables);
+
+	spinlock_release(&task_lock);
+	return 0;
+}
