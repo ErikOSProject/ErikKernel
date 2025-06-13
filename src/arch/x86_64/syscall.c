@@ -26,9 +26,9 @@ static struct syscall_id_name syscall_kernel = { 0, "fi.erikinkinen.kernel" };
 
 static struct syscall_id_name syscall_kernel_interfaces[] = {
 	{ SYSCALL_LOCAL_NAME_SERVICE,
-	  "fi.erikinkinen.kernel.LocalNameService" },
+	  "fi.erikinkinen.LocalNameService" },
 	{ SYSCALL_GLOBAL_NAME_SERVICE,
-	  "fi.erikinkinen.kernel.GlobalNameService" },
+	  "fi.erikinkinen.GlobalNameService" },
 	{ SYSCALL_STDIO, "fi.erikinkinen.kernel.Stdio" },
 	{ 0, NULL },
 };
