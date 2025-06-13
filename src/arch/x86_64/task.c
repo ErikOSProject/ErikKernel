@@ -12,9 +12,86 @@
 #include <arch/x86_64/idt.h>
 #include <arch/x86_64/msr.h>
 
+extern memory _memory;
+
 #define TASK_DEFAULT_STACK_PAGES 4
 #define TASK_DEFAULT_STACK_SIZE (TASK_DEFAULT_STACK_PAGES * PAGE_SIZE)
 #define KERNEL_BASE 0xfffffffff8000000
+
+/**
+ * @brief Release all mappings and page tables of an address space.
+ *
+ * Traverses the user portion of the provided PML4 and releases every page
+ * mapping and page table. Physical frames are unlocked once their reference
+ * count drops to zero. The kernel half of the tables is also cleaned up.
+ *
+ * @param pml4 Pointer to the root page table of the address space.
+ */
+static void task_free_address_space(uint64_t *pml4)
+{
+	if (!pml4)
+		return;
+
+	for (size_t pml4_i = 0; pml4_i < 512; pml4_i++) {
+		uintptr_t addr1 = (uintptr_t)pml4_i << 39;
+		if (addr1 >= KERNEL_BASE)
+			break;
+
+		if (!(pml4[pml4_i] & P_X64_PRESENT))
+			continue;
+
+		uint64_t *pdpt = (uint64_t *)(pml4[pml4_i] & ~0xFFF);
+		for (size_t pdpt_i = 0; pdpt_i < 512; pdpt_i++) {
+			uintptr_t addr2 = addr1 | ((uintptr_t)pdpt_i << 30);
+			if (addr2 >= KERNEL_BASE)
+				break;
+			if (!(pdpt[pdpt_i] & P_X64_PRESENT))
+				continue;
+
+			uint64_t *pd = (uint64_t *)(pdpt[pdpt_i] & ~0xFFF);
+			for (size_t pd_i = 0; pd_i < 512; pd_i++) {
+				uintptr_t addr3 = addr2 |
+						  ((uintptr_t)pd_i << 21);
+				if (addr3 >= KERNEL_BASE)
+					break;
+				if (!(pd[pd_i] & P_X64_PRESENT))
+					continue;
+
+				uint64_t *pt = (uint64_t *)(pd[pd_i] & ~0xFFF);
+				for (size_t pt_i = 0; pt_i < 512; pt_i++) {
+					uint64_t entry = pt[pt_i];
+					if (!(entry & P_X64_PRESENT))
+						continue;
+					uintptr_t paddr = entry & ~0xFFF;
+					frame_ref_dec(paddr);
+					if (!frame_refcounts) {
+						set_frame_lock(paddr, 1, false);
+					} else {
+						size_t idx =
+							(paddr - _memory.base) /
+							PAGE_SIZE;
+						if (frame_refcounts[idx] == 0)
+							set_frame_lock(paddr, 1,
+								       false);
+					}
+				}
+				set_frame_lock((uintptr_t)pt, 1, false);
+			}
+			set_frame_lock((uintptr_t)pd, 1, false);
+		}
+		set_frame_lock((uintptr_t)pdpt, 1, false);
+	}
+
+	if (pml4[0x1ff] & P_X64_PRESENT) {
+		uint64_t *pdpt = (uint64_t *)(pml4[0x1ff] & ~0xFFF);
+		if (pdpt[0x1ff] & P_X64_PRESENT) {
+			uint64_t *pd = (uint64_t *)(pdpt[0x1ff] & ~0xFFF);
+			set_frame_lock((uintptr_t)pd, 1, false);
+		}
+		set_frame_lock((uintptr_t)pdpt, 1, false);
+	}
+	set_frame_lock((uintptr_t)pml4, 1, false);
+}
 
 bool scheduler_enabled = false;
 struct list *processes = NULL;
@@ -243,7 +320,11 @@ void task_delete_process(struct process *proc)
 	}
 	list_destroy(proc->children);
 
-	//TODO: free address space
+	if (proc->tables) {
+		task_free_address_space(proc->tables);
+		proc->tables = NULL;
+	}
+
 	free(proc);
 }
 
