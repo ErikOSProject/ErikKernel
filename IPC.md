@@ -54,7 +54,17 @@ Upon invoking `METHOD`, the kernel spawns a new thread in the target process to 
 
 ### SIGNAL Semantics
 
-Unlike `METHOD`, `SIGNAL` sends the message to **all** listening processes. Each listener receives the signal in a newly created thread, similar to `METHOD`.
+Unlike `METHOD`, `SIGNAL` sends the message to **all** listening processes. Each
+listener receives the signal in a newly created thread. Signals are identified by
+an interface (IID) and a signal identifier (SID):
+
+```text
+SIGNAL <IID> <SID>
+```
+
+The kernel spawns a handler thread in every process that has registered an entry
+point. The interface and signal identifiers are passed to the handler through the
+`rdi` and `rsi` registers, respectively.
 
 ---
 

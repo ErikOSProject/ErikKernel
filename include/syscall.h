@@ -63,6 +63,11 @@ struct syscall_method_data {
 	uint64_t method;
 };
 
+struct syscall_signal_data {
+	uint64_t interface;
+	uint64_t signal;
+};
+
 void syscall_init(void);
 void syscall_entry(void);
 

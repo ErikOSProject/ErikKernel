@@ -56,4 +56,6 @@ struct process *task_find_process(int pid);
 struct process *task_fork(struct thread *t);
 int task_exec(struct thread *t, const char *path);
 
+extern struct list *processes;
+
 #endif //_TASK_H

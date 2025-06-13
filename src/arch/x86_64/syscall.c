@@ -346,6 +346,34 @@ static int64_t syscall_copy_param(struct syscall_param *src,
 }
 
 /**
+ * @brief Clone a list of system call parameters.
+ *
+ * This helper duplicates all parameters from the source list into the
+ * destination list. New parameter structures and backing memory are
+ * allocated so that the source list can be reused independently.
+ *
+ * @param src A pointer to the source parameter list.
+ * @param dst A pointer to the destination parameter list.
+ */
+static void syscall_clone_params(struct list *src, struct list *dst)
+{
+	for (struct node *n = src->head; n; n = n->next) {
+		struct syscall_param *param = n->value;
+		struct syscall_param *copy =
+			malloc(sizeof(struct syscall_param));
+		copy->type = param->type;
+		copy->size = param->size;
+		if (param->type == SYSCALL_PARAM_ARRAY) {
+			copy->array = malloc(param->size);
+			memcpy(copy->array, param->array, param->size);
+		} else {
+			copy->value = param->value;
+		}
+		list_insert_tail(dst, copy);
+	}
+}
+
+/**
  * @brief Push a parameter onto the system call parameter list.
  * 
  * This function pushes a parameter onto the system call parameter list.
@@ -480,6 +508,47 @@ static int64_t syscall_method(struct syscall_method_data *data,
 }
 
 /**
+ * @brief Broadcast a signal to all listening processes.
+ *
+ * The kernel creates a handler thread in every process that has registered
+ * a syscall entry point. The arguments currently stored in the caller's
+ * parameter list are duplicated for each listener. The call waits for each
+ * handler to finish before returning so that the duplicated parameter
+ * lists can be cleaned up.
+ */
+static int64_t syscall_signal(struct syscall_signal_data *data,
+			      thread_info *info, struct interrupt_frame *frame)
+{
+	if (!data)
+		return -1;
+
+	struct list *params = info->thread->syscall_params;
+
+	for (struct node *n = processes->head; n; n = n->next) {
+		struct process *proc = n->value;
+		if (!proc->syscall_callback)
+			continue;
+
+		paging_set_current(tables);
+		struct thread *t = task_new_thread(
+			proc, (void *)proc->syscall_callback, true);
+		paging_set_current(info->thread->proc->tables);
+
+		t->context->rdi = data->interface;
+		t->context->rsi = data->signal;
+
+		syscall_clone_params(params, t->syscall_params);
+
+		while (list_find(proc->threads, t))
+			task_switch(frame);
+
+		syscall_destroy_params(t->syscall_params);
+	}
+
+	return 0;
+}
+
+/**
  * @brief System call entry point.
  *
  * This function is the C entry point for system calls. It is called by the assembly
@@ -500,6 +569,10 @@ void syscall_handler(struct interrupt_frame *frame)
 		break;
 	case SYSCALL_METHOD:
 		frame->rax = syscall_method((struct syscall_method_data *)data,
+					    info, frame);
+		break;
+	case SYSCALL_SIGNAL:
+		frame->rax = syscall_signal((struct syscall_signal_data *)data,
 					    info, frame);
 		break;
 	case SYSCALL_PUSH:
