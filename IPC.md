@@ -66,6 +66,8 @@ SIGNAL <IID> <SID>
 The kernel spawns a handler thread in every process that has registered an entry
 point. The interface and signal identifiers are passed to the handler through the
 `rdi` and `rsi` registers, respectively, and the caller's PID is provided in `rdx`.
+The `SIGNAL` call returns immediately after creating these threads; each handler
+executes asynchronously and cleans up its own argument stack.
 
 ### TARGETED_SIGNAL Semantics
 
@@ -78,7 +80,8 @@ TARGETED_SIGNAL <PID> <IID> <SID>
 
 Only the specified process receives the signal. The handler arguments match
 `SIGNAL`: `rdi` holds the interface ID, `rsi` the signal ID, and `rdx` the
-sender's PID.
+sender's PID. Like `SIGNAL`, this syscall returns immediately without waiting for
+the handler to finish.
 
 ---
 

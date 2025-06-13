@@ -513,12 +513,12 @@ static int64_t syscall_method(struct syscall_method_data *data,
  *
  * The kernel creates a handler thread in every process that has registered
  * a syscall entry point. The arguments currently stored in the caller's
- * parameter list are duplicated for each listener. The call waits for each
- * handler to finish before returning so that the duplicated parameter
- * lists can be cleaned up.
+ * parameter list are duplicated for each listener. Unlike @ref syscall_method,
+ * this call does not wait for the spawned handlers to exit. Each handler
+ * thread cleans up its own parameter list when it terminates.
  */
 static int64_t syscall_signal(struct syscall_signal_data *data,
-			      thread_info *info, struct interrupt_frame *frame)
+			      thread_info *info)
 {
 	if (!data)
 		return -1;
@@ -532,7 +532,7 @@ static int64_t syscall_signal(struct syscall_signal_data *data,
 
 		paging_set_current(tables);
 		struct thread *t = task_new_thread(
-			proc, (void *)proc->syscall_callback, true);
+			proc, (void *)proc->syscall_callback, false);
 		paging_set_current(info->thread->proc->tables);
 
 		t->context->rdi = data->interface;
@@ -540,11 +540,6 @@ static int64_t syscall_signal(struct syscall_signal_data *data,
 		t->context->rdx = info->thread->proc->id;
 
 		syscall_clone_params(params, t->syscall_params);
-
-		while (list_find(proc->threads, t))
-			task_switch(frame);
-
-		syscall_destroy_params(t->syscall_params);
 	}
 
 	return 0;
@@ -558,7 +553,7 @@ static int64_t syscall_signal(struct syscall_signal_data *data,
  */
 static int64_t
 syscall_targeted_signal(struct syscall_targeted_signal_data *data,
-			thread_info *info, struct interrupt_frame *frame)
+			thread_info *info)
 {
 	if (!data)
 		return -1;
@@ -571,7 +566,7 @@ syscall_targeted_signal(struct syscall_targeted_signal_data *data,
 
 	paging_set_current(tables);
 	struct thread *t =
-		task_new_thread(proc, (void *)proc->syscall_callback, true);
+		task_new_thread(proc, (void *)proc->syscall_callback, false);
 	paging_set_current(info->thread->proc->tables);
 
 	t->context->rdi = data->interface;
@@ -579,11 +574,6 @@ syscall_targeted_signal(struct syscall_targeted_signal_data *data,
 	t->context->rdx = info->thread->proc->id;
 
 	syscall_clone_params(params, t->syscall_params);
-
-	while (list_find(proc->threads, t))
-		task_switch(frame);
-
-	syscall_destroy_params(t->syscall_params);
 
 	return 0;
 }
@@ -613,12 +603,11 @@ void syscall_handler(struct interrupt_frame *frame)
 		break;
 	case SYSCALL_SIGNAL:
 		frame->rax = syscall_signal((struct syscall_signal_data *)data,
-					    info, frame);
+					    info);
 		break;
 	case SYSCALL_TARGETED_SIGNAL:
 		frame->rax = syscall_targeted_signal(
-			(struct syscall_targeted_signal_data *)data, info,
-			frame);
+			(struct syscall_targeted_signal_data *)data, info);
 		break;
 	case SYSCALL_PUSH:
 		frame->rax = syscall_param_push(params, data);
