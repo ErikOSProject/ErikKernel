@@ -8,6 +8,7 @@
 #include <paging.h>
 #include <arch/x86_64/paging.h>
 #include <spinlock.h>
+#include <syscall.h>
 
 #include <arch/x86_64/idt.h>
 #include <arch/x86_64/msr.h>
@@ -177,7 +178,7 @@ void task_init(void)
 	proc->parent = NULL;
 	proc->children = list_create();
 
-	task_new_thread(proc, (void *)proc->image->entry);
+	task_new_thread(proc, (void *)proc->image->entry, false);
 	list_insert_tail(processes, proc);
 	spinlock_release(&task_lock);
 }
@@ -248,12 +249,14 @@ void task_exit(void)
  *
  * @return A pointer to the new thread structure.
  */
-struct thread *task_new_thread(struct process *proc, void *entry)
+struct thread *task_new_thread(struct process *proc, void *entry,
+			       bool ipc_handler)
 {
 	struct thread *thread = malloc(sizeof(struct thread));
 	thread->id = proc->next_tid++;
 	thread->proc = proc;
 	thread->exiting = false;
+	thread->ipc_handler = ipc_handler;
 	thread->syscall_params = list_create();
 
 	task_alloc_stack(thread);
@@ -289,7 +292,18 @@ void task_delete_thread(struct thread *thread)
 	if (n)
 		list_delete(thread->proc->threads, n);
 	set_frame_lock(thread->stack, TASK_DEFAULT_STACK_PAGES, false);
-	list_destroy(thread->syscall_params);
+
+	if (!thread->ipc_handler) {
+		while (thread->syscall_params->length) {
+			struct syscall_param *param =
+				list_shift(thread->syscall_params);
+			if (param->type == SYSCALL_PARAM_ARRAY)
+				free(param->array);
+			free(param);
+		}
+		list_destroy(thread->syscall_params);
+	}
+
 	free(thread->context);
 	free(thread);
 }
@@ -465,6 +479,7 @@ struct process *task_fork(struct thread *thread)
 	child_thread->id = child->next_tid++;
 	child_thread->proc = child;
 	child_thread->exiting = false;
+	child_thread->ipc_handler = false;
 	child_thread->stack = thread->stack;
 	child_thread->syscall_params = list_create();
 	child_thread->context = malloc(sizeof(struct interrupt_frame));

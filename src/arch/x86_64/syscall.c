@@ -432,8 +432,19 @@ static int64_t syscall_param_pop(struct list *params, void *data)
  *
  * @return The return value of the system call method.
  */
+static void syscall_destroy_params(struct list *params)
+{
+	while (params->length) {
+		struct syscall_param *param = list_shift(params);
+		if (param->type == SYSCALL_PARAM_ARRAY)
+			free(param->array);
+		free(param);
+	}
+	list_destroy(params);
+}
+
 static int64_t syscall_method(struct syscall_method_data *data,
-			      thread_info *info)
+			      thread_info *info, struct interrupt_frame *frame)
 {
 	if (!data)
 		return -1;
@@ -446,13 +457,24 @@ static int64_t syscall_method(struct syscall_method_data *data,
 		struct process *proc = task_find_process(data->pid);
 		if (!proc || !proc->syscall_callback)
 			return -1;
+
 		paging_set_current(tables);
-		struct thread *t =
-			task_new_thread(proc, (void *)proc->syscall_callback);
+		struct thread *t = task_new_thread(
+			proc, (void *)proc->syscall_callback, true);
 		paging_set_current(info->thread->proc->tables);
+
 		t->context->rdi = data->interface;
 		t->context->rsi = data->method;
-		syscall_copy_params(params, t->syscall_params);
+
+		struct list *ret_params = t->syscall_params;
+		syscall_copy_params(params, ret_params);
+
+		while (list_find(proc->threads, t))
+			task_switch(frame);
+
+		syscall_copy_params(ret_params, params);
+		syscall_destroy_params(ret_params);
+		return 0;
 	}
 	return -1;
 }
@@ -478,7 +500,7 @@ void syscall_handler(struct interrupt_frame *frame)
 		break;
 	case SYSCALL_METHOD:
 		frame->rax = syscall_method((struct syscall_method_data *)data,
-					    info);
+					    info, frame);
 		break;
 	case SYSCALL_PUSH:
 		frame->rax = syscall_param_push(params, data);

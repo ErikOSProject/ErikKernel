@@ -10,6 +10,7 @@ struct thread {
 	int id;
 	struct process *proc;
 	bool exiting;
+	bool ipc_handler;
 
 	uintptr_t stack;
 	struct list *syscall_params;
@@ -47,7 +48,8 @@ static inline void task_enable_scheduler(bool enable)
 void task_init(void);
 void task_switch(struct interrupt_frame *frame);
 void task_exit(void);
-struct thread *task_new_thread(struct process *proc, void *entry);
+struct thread *task_new_thread(struct process *proc, void *entry,
+			       bool ipc_handler);
 void task_delete_thread(struct thread *thread);
 void task_delete_process(struct process *proc);
 struct process *task_find_process(int pid);
