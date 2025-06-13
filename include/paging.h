@@ -10,6 +10,7 @@
 
 #define P_WRITE (1 << 0)
 #define P_USER (1 << 1)
+#define P_COW (1 << 2)
 
 #define P_KERNEL_RO 0
 #define P_KERNEL_WRITE P_WRITE

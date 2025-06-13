@@ -51,5 +51,6 @@ struct thread *task_new_thread(struct process *proc, void *entry);
 void task_delete_thread(struct thread *thread);
 void task_delete_process(struct process *proc);
 struct process *task_find_process(int pid);
+struct process *task_fork(struct thread *t);
 
 #endif //_TASK_H

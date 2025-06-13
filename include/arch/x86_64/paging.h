@@ -19,6 +19,7 @@
 #define P_X64_PRESENT (1 << 0)
 #define P_X64_WRITE (1 << 1)
 #define P_X64_USER (1 << 2)
+#define P_X64_COW (1 << 9)
 
 #define TABLE_DEFAULT (P_X64_PRESENT | P_X64_WRITE | P_X64_USER)
 

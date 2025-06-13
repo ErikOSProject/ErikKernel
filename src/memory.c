@@ -15,6 +15,7 @@
 #define EFI_CONVENTIONAL_MEMORY 7
 
 memory _memory = { 0 };
+uint16_t *frame_refcounts = NULL;
 
 /**
  * @brief Fills a block of memory with a specified value.
@@ -302,7 +303,30 @@ intptr_t set_frame_lock(uintptr_t frame, size_t n, bool lock)
 		return -1;
 	fill_bitmap_region(_memory.bitmap, (frame - _memory.base) / PAGE_SIZE,
 			   n, lock);
+	if (frame_refcounts) {
+		for (size_t i = 0; i < n; i++) {
+			size_t idx = (frame - _memory.base) / PAGE_SIZE + i;
+			frame_refcounts[idx] = lock ? 1 : 0;
+		}
+	}
 	return frame;
+}
+
+void frame_ref_inc(uintptr_t frame)
+{
+	if (!frame_refcounts)
+		return;
+	size_t idx = (frame - _memory.base) / PAGE_SIZE;
+	frame_refcounts[idx]++;
+}
+
+void frame_ref_dec(uintptr_t frame)
+{
+	if (!frame_refcounts)
+		return;
+	size_t idx = (frame - _memory.base) / PAGE_SIZE;
+	if (frame_refcounts[idx] > 0)
+		frame_refcounts[idx]--;
 }
 
 /**
@@ -327,6 +351,9 @@ void page_frame_allocator_init(BootInfo *boot_info)
 
 	size_t bitmap_length = _memory.length / PAGE_SIZE / 8;
 	memset(_memory.bitmap, 0xFF, bitmap_length);
+	size_t refcount_size = (_memory.length / PAGE_SIZE) * sizeof(uint16_t);
+	frame_refcounts = (uint16_t *)(_memory.bitmap + bitmap_length);
+	memset(frame_refcounts, 0, refcount_size);
 
 	MMapEntry *memory_map = boot_info->MMapBase;
 	for (size_t i = 0; i < boot_info->MMapEntryCount; i++) {
@@ -340,4 +367,6 @@ void page_frame_allocator_init(BootInfo *boot_info)
 
 	set_frame_lock((uintptr_t)_memory.bitmap, bitmap_length / PAGE_SIZE + 1,
 		       true);
+	set_frame_lock((uintptr_t)frame_refcounts,
+		       (refcount_size + PAGE_SIZE - 1) / PAGE_SIZE, true);
 }

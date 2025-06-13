@@ -10,6 +10,10 @@
 
 #include <arch/x86_64/apic.h>
 #include <arch/x86_64/idt.h>
+#include <arch/x86_64/paging.h>
+#include <arch/x86_64/msr.h>
+#include <memory.h>
+#include <task.h>
 
 __attribute__((aligned(0x10))) static interrupt_descriptor idt[256];
 static idtr _idtr = { .limit = (uint16_t)sizeof(idt) - 1,
@@ -82,6 +86,55 @@ char *register_names[] = {
 		asm volatile("hlt");
 }
 
+static void handle_page_fault(struct interrupt_frame *frame)
+{
+	uint64_t addr;
+	asm volatile("movq %%cr2, %0" : "=r"(addr));
+	thread_info *info = (thread_info *)read_msr(MSR_GS_BASE);
+	if (!info->thread) {
+		panic_handler(frame);
+		return;
+	}
+	uint64_t *pml4 = info->thread->proc->tables;
+	uint64_t pml4_i = PML4_INDEX(addr);
+	uint64_t pdpt_i = PDPT_INDEX(addr);
+	uint64_t pd_i = PD_INDEX(addr);
+	uint64_t pt_i = PT_INDEX(addr);
+
+	if (!(pml4[pml4_i] & P_X64_PRESENT)) {
+		panic_handler(frame);
+		return;
+	}
+	uint64_t *pdpt = (uint64_t *)(pml4[pml4_i] & ~0xFFF);
+	if (!(pdpt[pdpt_i] & P_X64_PRESENT)) {
+		panic_handler(frame);
+		return;
+	}
+	uint64_t *pd = (uint64_t *)(pdpt[pdpt_i] & ~0xFFF);
+	if (!(pd[pd_i] & P_X64_PRESENT)) {
+		panic_handler(frame);
+		return;
+	}
+	uint64_t *pt = (uint64_t *)(pd[pd_i] & ~0xFFF);
+	if (!(pt[pt_i] & P_X64_PRESENT) || !(pt[pt_i] & P_X64_COW)) {
+		panic_handler(frame);
+		return;
+	}
+
+	uintptr_t old_paddr = pt[pt_i] & ~0xFFF;
+	uintptr_t new_paddr = find_free_frames(1);
+	if (new_paddr == (uintptr_t)-1) {
+		panic_handler(frame);
+		return;
+	}
+	set_frame_lock(new_paddr, 1, true);
+	uint8_t buffer[PAGE_SIZE];
+	memcpy(buffer, (void *)addr, PAGE_SIZE);
+	paging_map_page(pml4, addr, new_paddr, P_USER_WRITE);
+	memcpy((void *)addr, buffer, PAGE_SIZE);
+	frame_ref_dec(old_paddr);
+}
+
 /**
  * @brief Handles the interrupt service routine (ISR).
  *
@@ -93,10 +146,12 @@ char *register_names[] = {
  */
 void isr_handler(struct interrupt_frame *frame)
 {
-	if (frame->isr_number < 32)
-		panic_handler(frame);
-
-	else if (frame->isr_number == 48)
+	if (frame->isr_number < 32) {
+		if (frame->isr_number == 14)
+			handle_page_fault(frame);
+		else
+			panic_handler(frame);
+	} else if (frame->isr_number == 48)
 		timer_tick(frame);
 }
 

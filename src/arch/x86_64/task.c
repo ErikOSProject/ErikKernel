@@ -6,6 +6,7 @@
 #include <list.h>
 #include <memory.h>
 #include <paging.h>
+#include <arch/x86_64/paging.h>
 #include <spinlock.h>
 
 #include <arch/x86_64/idt.h>
@@ -13,6 +14,7 @@
 
 #define TASK_DEFAULT_STACK_PAGES 4
 #define TASK_DEFAULT_STACK_SIZE (TASK_DEFAULT_STACK_PAGES * PAGE_SIZE)
+#define KERNEL_BASE 0xfffffffff8000000
 
 bool scheduler_enabled = false;
 struct list *processes = NULL;
@@ -262,4 +264,135 @@ struct process *task_find_process(int pid)
 			return proc;
 	}
 	return NULL;
+}
+
+/**
+ * @brief Clones the user space of a process with copy-on-write semantics.
+ *
+ * This function clones the user space of a process by creating new page tables
+ * and marking writable pages as copy-on-write. It ensures that modifications to
+ * these pages in either the parent or child process do not affect the other.
+ *
+ * @param src Pointer to the source process's page tables.
+ * @param dst Pointer to the destination process's page tables.
+ */
+static void clone_user_space_cow(uint64_t *src, uint64_t *dst)
+{
+	for (size_t pml4_i = 0; pml4_i < 512; pml4_i++) {
+		if (!(src[pml4_i] & P_X64_PRESENT))
+			continue;
+		uint64_t base = (uint64_t)pml4_i << 39;
+		if (base >= KERNEL_BASE)
+			break;
+
+		uint64_t *src_pdpt = (uint64_t *)(src[pml4_i] & ~0xFFF);
+		uint64_t *dst_pdpt = paging_create_table();
+		dst[pml4_i] = ((uint64_t)dst_pdpt) | TABLE_DEFAULT;
+
+		for (size_t pdpt_i = 0; pdpt_i < 512; pdpt_i++) {
+			if (!(src_pdpt[pdpt_i] & P_X64_PRESENT))
+				continue;
+			uint64_t addr1 = base | ((uint64_t)pdpt_i << 30);
+			if (addr1 >= KERNEL_BASE)
+				break;
+
+			uint64_t *src_pd =
+				(uint64_t *)(src_pdpt[pdpt_i] & ~0xFFF);
+			uint64_t *dst_pd = paging_create_table();
+			dst_pdpt[pdpt_i] = ((uint64_t)dst_pd) | TABLE_DEFAULT;
+
+			for (size_t pd_i = 0; pd_i < 512; pd_i++) {
+				if (!(src_pd[pd_i] & P_X64_PRESENT))
+					continue;
+				uint64_t addr2 = addr1 | ((uint64_t)pd_i << 21);
+				if (addr2 >= KERNEL_BASE)
+					break;
+
+				uint64_t *src_pt =
+					(uint64_t *)(src_pd[pd_i] & ~0xFFF);
+				uint64_t *dst_pt = paging_create_table();
+				dst_pd[pd_i] = ((uint64_t)dst_pt) |
+					       TABLE_DEFAULT;
+
+				for (size_t pt_i = 0; pt_i < 512; pt_i++) {
+					uint64_t entry = src_pt[pt_i];
+					if (!(entry & P_X64_PRESENT))
+						continue;
+					uint64_t vaddr = addr2 |
+							 ((uint64_t)pt_i << 12);
+					if (vaddr >= KERNEL_BASE)
+						break;
+
+					uint64_t flags = entry & 0xFFF;
+					uintptr_t paddr = entry & ~0xFFF;
+					if (flags & P_X64_WRITE) {
+						flags &= ~P_X64_WRITE;
+						flags |= P_X64_COW;
+						src_pt[pt_i] = paddr | flags;
+					}
+					dst_pt[pt_i] = paddr | flags;
+					frame_ref_inc(paddr);
+				}
+			}
+		}
+	}
+}
+
+/**
+ * @brief Fork a thread into a new process.
+ *
+ * This creates a new child process by cloning the parent's address space.
+ * Writable pages are marked copy-on-write so they are only duplicated
+ * when modified by either process. The provided thread is duplicated so
+ * execution in the child continues from the same point as the parent.
+ *
+ * @param thread Pointer to the thread to be forked.
+ *
+ * @return A pointer to the newly created process or NULL on failure.
+ */
+struct process *task_fork(struct thread *thread)
+{
+	if (!thread)
+		return NULL;
+
+	struct process *parent = thread->proc;
+
+	spinlock_acquire(&task_lock);
+
+	struct process *child = malloc(sizeof(struct process));
+	if (!child) {
+		spinlock_release(&task_lock);
+		return NULL;
+	}
+
+	child->id = task_next_id++;
+	child->image = parent->image;
+	if (child->image)
+		child->image->refcount++;
+
+	task_new_address_space(child);
+	clone_user_space_cow(parent->tables, child->tables);
+	child->syscall_callback = parent->syscall_callback;
+
+	child->threads = list_create();
+	child->next_tid = 1;
+	child->parent = parent;
+	child->children = list_create();
+	list_insert_tail(parent->children, child);
+
+	struct thread *child_thread = malloc(sizeof(struct thread));
+	child_thread->id = child->next_tid++;
+	child_thread->proc = child;
+	child_thread->exiting = false;
+	child_thread->stack = thread->stack;
+	child_thread->syscall_params = list_create();
+	child_thread->context = malloc(sizeof(struct interrupt_frame));
+	*child_thread->context = *thread->context;
+
+	list_insert_tail(child->threads, child_thread);
+	list_insert_tail(task_queue, child_thread);
+	list_insert_tail(processes, child);
+
+	spinlock_release(&task_lock);
+	return child;
 }

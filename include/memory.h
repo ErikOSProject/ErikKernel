@@ -32,5 +32,8 @@ char *strtok(char *str, const char *delimiters);
 intptr_t find_free_frames(size_t n);
 intptr_t set_frame_lock(uintptr_t frame, size_t n, bool lock);
 void page_frame_allocator_init(BootInfo *boot_info);
+extern uint16_t *frame_refcounts;
+void frame_ref_inc(uintptr_t frame);
+void frame_ref_dec(uintptr_t frame);
 
 #endif //_MEMORY_H

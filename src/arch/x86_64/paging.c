@@ -46,6 +46,8 @@ uint64_t paging_flags_to_arch(uint64_t flags)
 		arch_flags |= P_X64_USER;
 	if (flags & P_WRITE)
 		arch_flags |= P_X64_WRITE;
+	if (flags & P_COW)
+		arch_flags |= P_X64_COW;
 	return arch_flags;
 }
 
@@ -102,6 +104,7 @@ void paging_map_page(uint64_t *pml4, uintptr_t vaddr, uintptr_t paddr,
 
 	uint64_t arch_flags = paging_flags_to_arch(flags);
 	pt[pt_index] = (paddr & ~0xFFF) | arch_flags;
+	frame_ref_inc(paddr & ~0xFFF);
 }
 
 /**
@@ -139,7 +142,9 @@ void paging_unmap_page(uint64_t *pml4, uintptr_t vaddr)
 
 	if (!(pt[pt_index] & P_X64_PRESENT))
 		return;
+	uintptr_t paddr = pt[pt_index] & ~0xFFF;
 	pt[pt_index] = 0;
+	frame_ref_dec(paddr);
 
 	asm volatile("invlpg (%0)" ::"r"(vaddr) : "memory");
 }
