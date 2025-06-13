@@ -493,6 +493,7 @@ static int64_t syscall_method(struct syscall_method_data *data,
 
 		t->context->rdi = data->interface;
 		t->context->rsi = data->method;
+		t->context->rdx = info->thread->proc->id;
 
 		struct list *ret_params = t->syscall_params;
 		syscall_copy_params(params, ret_params);
@@ -536,6 +537,7 @@ static int64_t syscall_signal(struct syscall_signal_data *data,
 
 		t->context->rdi = data->interface;
 		t->context->rsi = data->signal;
+		t->context->rdx = info->thread->proc->id;
 
 		syscall_clone_params(params, t->syscall_params);
 

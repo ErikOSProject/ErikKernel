@@ -50,7 +50,7 @@ Method invocations are routed via three numerical identifiers:
 METHOD <PID> <IID> <MID>
 ```
 
-Upon invoking `METHOD`, the kernel spawns a new thread in the target process to handle the request. The target process must register a method handler entry point via a kernel-provided API.
+Upon invoking `METHOD`, the kernel spawns a new thread in the target process to handle the request. The target process must register a method handler entry point via a kernel-provided API. The interface identifier is placed in `rdi`, the method identifier in `rsi`, and the caller's PID in `rdx` for the handler.
 
 ### SIGNAL Semantics
 
@@ -64,7 +64,7 @@ SIGNAL <IID> <SID>
 
 The kernel spawns a handler thread in every process that has registered an entry
 point. The interface and signal identifiers are passed to the handler through the
-`rdi` and `rsi` registers, respectively.
+`rdi` and `rsi` registers, respectively, and the caller's PID is provided in `rdx`.
 
 ---
 
