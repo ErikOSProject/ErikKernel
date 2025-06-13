@@ -536,7 +536,7 @@ static int64_t syscall_signal(struct syscall_signal_data *data,
 		paging_set_current(info->thread->proc->tables);
 
 		t->context->rdi = data->interface;
-		t->context->rsi = data->signal;
+		t->context->rsi = -data->signal;
 		t->context->rdx = info->thread->proc->id;
 
 		syscall_clone_params(params, t->syscall_params);
@@ -570,7 +570,7 @@ syscall_targeted_signal(struct syscall_targeted_signal_data *data,
 	paging_set_current(info->thread->proc->tables);
 
 	t->context->rdi = data->interface;
-	t->context->rsi = data->signal;
+	t->context->rsi = -data->signal;
 	t->context->rdx = info->thread->proc->id;
 
 	syscall_clone_params(params, t->syscall_params);
